@@ -47,6 +47,13 @@ export default {
           DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))",
         },
+        // Agricultural & Blockchain theme colors
+        forest: "hsl(var(--forest))",
+        harvest: "hsl(var(--harvest))",
+        earth: "hsl(var(--earth))",
+        growth: "hsl(var(--growth))",
+        blockchain: "hsl(var(--blockchain))",
+        trust: "hsl(var(--trust))",
         sidebar: {
           DEFAULT: "hsl(var(--sidebar-background))",
           foreground: "hsl(var(--sidebar-foreground))",
