@@ -14,7 +14,161 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      products: {
+        Row: {
+          batch_id: string
+          blockchain_hash: string | null
+          certifications: Json | null
+          created_at: string
+          farm_location: string
+          farmer_id: string
+          harvest_date: string
+          id: string
+          product_name: string
+          qr_code: string
+          quality_grade: string | null
+          quantity: number
+          status: string
+          unit: string
+          updated_at: string
+          variety: string | null
+        }
+        Insert: {
+          batch_id: string
+          blockchain_hash?: string | null
+          certifications?: Json | null
+          created_at?: string
+          farm_location: string
+          farmer_id: string
+          harvest_date: string
+          id?: string
+          product_name: string
+          qr_code: string
+          quality_grade?: string | null
+          quantity: number
+          status?: string
+          unit: string
+          updated_at?: string
+          variety?: string | null
+        }
+        Update: {
+          batch_id?: string
+          blockchain_hash?: string | null
+          certifications?: Json | null
+          created_at?: string
+          farm_location?: string
+          farmer_id?: string
+          harvest_date?: string
+          id?: string
+          product_name?: string
+          qr_code?: string
+          quality_grade?: string | null
+          quantity?: number
+          status?: string
+          unit?: string
+          updated_at?: string
+          variety?: string | null
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          created_at: string
+          email: string
+          full_name: string
+          id: string
+          location: string | null
+          organization: string | null
+          phone: string | null
+          role: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          full_name: string
+          id?: string
+          location?: string | null
+          organization?: string | null
+          phone?: string | null
+          role: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          full_name?: string
+          id?: string
+          location?: string | null
+          organization?: string | null
+          phone?: string | null
+          role?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      supply_chain_transactions: {
+        Row: {
+          blockchain_hash: string | null
+          from_stakeholder_id: string | null
+          humidity: number | null
+          id: string
+          location: string
+          product_id: string
+          quality_notes: string | null
+          storage_conditions: string | null
+          temperature: number | null
+          timestamp: string
+          to_stakeholder_id: string
+          transaction_type: string
+          verification_signature: string | null
+          verified: boolean | null
+        }
+        Insert: {
+          blockchain_hash?: string | null
+          from_stakeholder_id?: string | null
+          humidity?: number | null
+          id?: string
+          location: string
+          product_id: string
+          quality_notes?: string | null
+          storage_conditions?: string | null
+          temperature?: number | null
+          timestamp?: string
+          to_stakeholder_id: string
+          transaction_type: string
+          verification_signature?: string | null
+          verified?: boolean | null
+        }
+        Update: {
+          blockchain_hash?: string | null
+          from_stakeholder_id?: string | null
+          humidity?: number | null
+          id?: string
+          location?: string
+          product_id?: string
+          quality_notes?: string | null
+          storage_conditions?: string | null
+          temperature?: number | null
+          timestamp?: string
+          to_stakeholder_id?: string
+          transaction_type?: string
+          verification_signature?: string | null
+          verified?: boolean | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "supply_chain_transactions_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
