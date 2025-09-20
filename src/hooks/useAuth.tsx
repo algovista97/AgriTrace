@@ -4,7 +4,6 @@ import { supabase } from '@/integrations/supabase/client';
 
 interface Profile {
   id: string;
-  user_id: string;
   email: string;
   full_name: string;
   role: string;
@@ -42,7 +41,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       const { data, error } = await supabase
         .from('profiles')
         .select('*')
-        .eq('user_id', userId)
+        .eq('id', userId)
         .single();
 
       if (error && error.code !== 'PGRST116') {

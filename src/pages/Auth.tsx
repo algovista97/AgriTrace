@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -12,6 +13,7 @@ import { Leaf, Truck, Store, User } from 'lucide-react';
 
 const Auth = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
     email: '',
@@ -23,6 +25,13 @@ const Auth = () => {
     phone: ''
   });
 
+  // Redirect authenticated users to dashboard
+  useEffect(() => {
+    if (user) {
+      navigate('/dashboard');
+    }
+  }, [user, navigate]);
+
   const handleInputChange = (field: string, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
@@ -32,11 +41,18 @@ const Auth = () => {
     setLoading(true);
 
     try {
-      const { data: authData, error: authError } = await supabase.auth.signUp({
+      const { error: authError } = await supabase.auth.signUp({
         email: formData.email,
         password: formData.password,
         options: {
-          emailRedirectTo: `${window.location.origin}/`
+          emailRedirectTo: `${window.location.origin}/`,
+          data: {
+            full_name: formData.fullName,
+            role: formData.role,
+            organization: formData.organization,
+            location: formData.location,
+            phone: formData.phone
+          }
         }
       });
 
@@ -49,36 +65,12 @@ const Auth = () => {
         return;
       }
 
-      if (authData.user) {
-        // Create user profile
-        const { error: profileError } = await supabase
-          .from('profiles')
-          .insert({
-            user_id: authData.user.id,
-            email: formData.email,
-            full_name: formData.fullName,
-            role: formData.role,
-            organization: formData.organization,
-            location: formData.location,
-            phone: formData.phone
-          });
-
-        if (profileError) {
-          toast({
-            title: "Profile Creation Error",
-            description: profileError.message,
-            variant: "destructive",
-          });
-          return;
-        }
-
-        toast({
-          title: "Success!",
-          description: "Account created successfully. Please check your email for verification.",
-        });
-        
-        navigate('/dashboard');
-      }
+      toast({
+        title: "Success!",
+        description: "Account created successfully. Please check your email for verification.",
+      });
+      
+      navigate('/dashboard');
     } catch (error) {
       toast({
         title: "Error",
