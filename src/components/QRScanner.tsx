@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { useBlockchain } from '@/components/BlockchainSimulator';
+import { useWeb3 } from '@/hooks/useWeb3';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -27,7 +27,7 @@ export const QRScanner = () => {
   const [transactions, setTransactions] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const { getTransactionsByProduct } = useBlockchain();
+  const { getProductTransactions } = useWeb3();
 
   const searchProduct = async (searchTerm: string) => {
     setLoading(true);
@@ -65,8 +65,8 @@ export const QRScanner = () => {
         return;
       }
 
-      // Get blockchain transactions
-      const blockchainTransactions = getTransactionsByProduct(productData.batch_id);
+      // Get blockchain transactions  
+      const blockchainTransactions = await getProductTransactions(parseInt(productData.batch_id.split('-')[1]) || 1);
 
       setScannedProduct(productData);
       setTransactions(transactionData || []);

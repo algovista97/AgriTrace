@@ -1,126 +1,55 @@
-import { useState } from 'react';
-import crypto from 'crypto-js';
+import React from 'react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Info, Zap, Shield, Clock } from 'lucide-react';
 
-interface BlockchainTransaction {
-  id: string;
-  productId: string;
-  fromStakeholder?: string;
-  toStakeholder: string;
-  transactionType: string;
-  location: string;
-  timestamp: Date;
-  data: any;
-  hash: string;
-  previousHash: string;
-}
+const BlockchainSimulator = () => {
+  return (
+    <Card className="mb-6">
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <Zap className="w-5 h-5 text-yellow-500" />
+          Demo Mode Active
+        </CardTitle>
+        <CardDescription>
+          Blockchain simulation for testing without gas fees
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <Alert>
+          <Info className="h-4 w-4" />
+          <AlertDescription>
+            You're currently using a simulated blockchain environment. All transactions are mocked for demonstration purposes.
+          </AlertDescription>
+        </Alert>
 
-class BlockchainSimulator {
-  private chain: BlockchainTransaction[] = [];
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="flex items-center gap-2">
+            <Shield className="w-4 h-4 text-green-500" />
+            <span className="text-sm">No Gas Fees</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <Clock className="w-4 h-4 text-blue-500" />
+            <span className="text-sm">Instant Transactions</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <Badge variant="secondary">Demo Network</Badge>
+          </div>
+        </div>
 
-  constructor() {
-    this.createGenesisBlock();
-  }
-
-  private createGenesisBlock() {
-    const genesisBlock: BlockchainTransaction = {
-      id: 'genesis',
-      productId: 'genesis',
-      toStakeholder: 'system',
-      transactionType: 'genesis',
-      location: 'blockchain',
-      timestamp: new Date(),
-      data: { message: 'Genesis block for AgriChain' },
-      hash: this.calculateHash('genesis', new Date(), { message: 'Genesis block' }),
-      previousHash: '0'
-    };
-    
-    this.chain.push(genesisBlock);
-  }
-
-  private calculateHash(id: string, timestamp: Date, data: any): string {
-    const previousHash = this.getLatestBlock()?.hash || '0';
-    return crypto.SHA256(id + timestamp.toISOString() + JSON.stringify(data) + previousHash).toString();
-  }
-
-  private getLatestBlock(): BlockchainTransaction | undefined {
-    return this.chain[this.chain.length - 1];
-  }
-
-  public addTransaction(transaction: Omit<BlockchainTransaction, 'hash' | 'previousHash'>): string {
-    const previousHash = this.getLatestBlock()?.hash || '0';
-    const hash = this.calculateHash(transaction.id, transaction.timestamp, transaction.data);
-    
-    const blockchainTransaction: BlockchainTransaction = {
-      ...transaction,
-      hash,
-      previousHash
-    };
-    
-    this.chain.push(blockchainTransaction);
-    return hash;
-  }
-
-  public getChain(): BlockchainTransaction[] {
-    return this.chain;
-  }
-
-  public getTransactionsByProduct(productId: string): BlockchainTransaction[] {
-    return this.chain.filter(block => block.productId === productId);
-  }
-
-  public isChainValid(): boolean {
-    for (let i = 1; i < this.chain.length; i++) {
-      const currentBlock = this.chain[i];
-      const previousBlock = this.chain[i - 1];
-
-      // Verify hash integrity
-      const expectedHash = this.calculateHash(currentBlock.id, currentBlock.timestamp, currentBlock.data);
-      if (currentBlock.hash !== expectedHash) {
-        return false;
-      }
-
-      // Verify chain linkage
-      if (currentBlock.previousHash !== previousBlock.hash) {
-        return false;
-      }
-    }
-    return true;
-  }
-}
-
-// Singleton instance
-const blockchainInstance = new BlockchainSimulator();
-
-export const useBlockchain = () => {
-  const [isValid, setIsValid] = useState(true);
-
-  const addTransaction = (transaction: Omit<BlockchainTransaction, 'hash' | 'previousHash'>) => {
-    const hash = blockchainInstance.addTransaction(transaction);
-    setIsValid(blockchainInstance.isChainValid());
-    return hash;
-  };
-
-  const getTransactionsByProduct = (productId: string) => {
-    return blockchainInstance.getTransactionsByProduct(productId);
-  };
-
-  const getFullChain = () => {
-    return blockchainInstance.getChain();
-  };
-
-  const verifyChain = () => {
-    const valid = blockchainInstance.isChainValid();
-    setIsValid(valid);
-    return valid;
-  };
-
-  return {
-    addTransaction,
-    getTransactionsByProduct,
-    getFullChain,
-    verifyChain,
-    isValid
-  };
+        <div className="text-xs text-muted-foreground bg-muted/50 p-3 rounded-lg">
+          <p><strong>To use real blockchain:</strong></p>
+          <ol className="list-decimal list-inside mt-2 space-y-1">
+            <li>Deploy the smart contract to Sepolia testnet</li>
+            <li>Update the contract address in the code</li>
+            <li>Get Sepolia ETH from a faucet</li>
+            <li>Transactions will then be recorded on the real blockchain</li>
+          </ol>
+        </div>
+      </CardContent>
+    </Card>
+  );
 };
 
-export type { BlockchainTransaction };
+export default BlockchainSimulator;
