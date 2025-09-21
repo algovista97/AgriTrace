@@ -11,6 +11,7 @@ import { toast } from '@/hooks/use-toast';
 
 const ROLE_NAMES = ['Farmer', 'Distributor', 'Retailer', 'Consumer'];
 const NETWORK_NAMES = {
+  '0x539': 'Localhost 8545',
   '0xaa36a7': 'Sepolia Testnet',
   '0x13881': 'Mumbai Testnet'
 };
@@ -118,6 +119,7 @@ const MetaMaskAuth = () => {
             <div className="space-y-2 text-sm text-muted-foreground">
               <p><strong>Supported Networks:</strong></p>
               <ul className="space-y-1">
+                <li>• Localhost 8545 (Development)</li>
                 <li>• Sepolia Testnet (Ethereum)</li>
                 <li>• Mumbai Testnet (Polygon)</li>
               </ul>
@@ -156,7 +158,14 @@ const MetaMaskAuth = () => {
                   Please switch to a supported testnet
                 </span>
               </div>
-              <div className="grid grid-cols-2 gap-2">
+              <div className="grid grid-cols-3 gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => switchNetwork('localhost')}
+                >
+                  Localhost
+                </Button>
                 <Button
                   variant="outline"
                   size="sm"

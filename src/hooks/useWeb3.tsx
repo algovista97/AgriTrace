@@ -5,6 +5,17 @@ import SupplyChainABI from '@/contracts/SupplyChain.json';
 
 // Network configurations
 const NETWORKS = {
+  localhost: {
+    chainId: '0x539', // 1337 in hex
+    chainName: 'Localhost 8545',
+    nativeCurrency: {
+      name: 'ETH',
+      symbol: 'ETH',
+      decimals: 18
+    },
+    rpcUrls: ['http://127.0.0.1:8545'],
+    blockExplorerUrls: ['http://127.0.0.1:8545']
+  },
   sepolia: {
     chainId: '0xaa36a7', // 11155111 in hex
     chainName: 'Sepolia Test Network',
@@ -31,9 +42,10 @@ const NETWORKS = {
 
 // Contract addresses - Update these after deployment
 const CONTRACT_ADDRESSES = {
-  sepolia: '0x5FbDB2315678afecb367f032d93F642f64180aa3', // Demo address - update after deployment
-  mumbai: '0x5FbDB2315678afecb367f032d93F642f64180aa3',  // Demo address - update after deployment
-  hardhat: '0x5FbDB2315678afecb367f032d93F642f64180aa3'   // Local development
+  localhost: '0x5FbDB2315678afecb367f032d93F642f64180aa3', // Update after local deployment
+  sepolia: '0x5FbDB2315678afecb367f032d93F642f64180aa3',   // Update after sepolia deployment
+  mumbai: '0x5FbDB2315678afecb367f032d93F642f64180aa3',    // Update after mumbai deployment
+  hardhat: '0x5FbDB2315678afecb367f032d93F642f64180aa3'     // Legacy support
 };
 
 interface Web3ContextType {
@@ -48,6 +60,7 @@ interface Web3ContextType {
   connectWallet: () => Promise<void>;
   disconnectWallet: () => void;
   switchNetwork: (network: keyof typeof NETWORKS) => Promise<void>;
+  getNetworkName: () => string;
   registerStakeholder: (role: number, name: string, organization: string) => Promise<void>;
   registerProduct: (productData: any) => Promise<number>;
   transferProduct: (productId: number, to: string, newStatus: number, location: string, transactionType: string, additionalData: string) => Promise<void>;
@@ -76,22 +89,30 @@ export const Web3Provider = ({ children }: { children: ReactNode }) => {
   const [stakeholder, setStakeholder] = useState<any>(null);
 
   const getContractAddress = (chainId: string) => {
-    if (chainId === '0xaa36a7') return CONTRACT_ADDRESSES.sepolia;
-    if (chainId === '0x13881') return CONTRACT_ADDRESSES.mumbai;
-    if (chainId === '0x539') return CONTRACT_ADDRESSES.hardhat; // Local Hardhat
-    
-    // For demo purposes, return sepolia address for any testnet
-    return CONTRACT_ADDRESSES.sepolia;
+    switch (chainId) {
+      case '0x539': // 1337 - Local Hardhat/Ganache
+        return CONTRACT_ADDRESSES.localhost;
+      case '0xaa36a7': // 11155111 - Sepolia
+        return CONTRACT_ADDRESSES.sepolia;
+      case '0x13881': // 80001 - Mumbai
+        return CONTRACT_ADDRESSES.mumbai;
+      default:
+        // For demo purposes, return localhost address for unknown networks
+        return CONTRACT_ADDRESSES.localhost;
+    }
   };
 
   const initializeContract = async (provider: ethers.BrowserProvider, signer: ethers.JsonRpcSigner, chainId: string) => {
     const contractAddress = getContractAddress(chainId);
+    const networkName = getNetworkName(chainId);
+    
+    console.log(`Attempting to connect to contract on ${networkName} at:`, contractAddress);
     
     if (!contractAddress || contractAddress === '0x0000000000000000000000000000000000000000') {
-      console.warn('Contract not deployed on this network');
+      console.warn('Contract not configured for this network');
       toast({
-        title: "Contract Not Available",
-        description: "Smart contract not deployed on this network. Using demo mode.",
+        title: "Contract Not Configured",
+        description: `Smart contract address not set for ${networkName}. Using demo mode.`,
         variant: "default",
       });
       return createMockContract();
@@ -100,22 +121,48 @@ export const Web3Provider = ({ children }: { children: ReactNode }) => {
     try {
       const contractInstance = new ethers.Contract(contractAddress, SupplyChainABI.abi, signer);
       
-      // Test if contract exists by calling a simple method
+      // Test if contract exists by calling a view function
       try {
         await contractInstance.getAddress();
-        console.log('Contract connected successfully at:', contractAddress);
+        // Try to call a contract method to verify it's deployed
+        await provider.getCode(contractAddress);
+        const code = await provider.getCode(contractAddress);
+        
+        if (code === '0x') {
+          throw new Error('No contract deployed at this address');
+        }
+        
+        console.log(`✅ Contract connected successfully on ${networkName}:`, contractAddress);
+        toast({
+          title: "Blockchain Connected",
+          description: `Connected to smart contract on ${networkName}`,
+        });
         return contractInstance;
       } catch (error) {
-        console.warn('Contract not found at address, using mock contract');
+        console.warn(`Contract not deployed at ${contractAddress} on ${networkName}, using demo mode`);
         toast({
           title: "Demo Mode Active",
-          description: "Using mock blockchain for demonstration purposes.",
+          description: `Contract not deployed on ${networkName}. Using mock blockchain for demonstration.`,
         });
         return createMockContract();
       }
     } catch (error) {
       console.error('Error initializing contract:', error);
+      toast({
+        title: "Connection Error",
+        description: `Failed to connect to contract on ${networkName}. Using demo mode.`,
+        variant: "destructive",
+      });
       return createMockContract();
+    }
+  };
+
+  const getNetworkName = (chainId: string) => {
+    switch (chainId) {
+      case '0x539': return 'Localhost';
+      case '0xaa36a7': return 'Sepolia';
+      case '0x13881': return 'Mumbai';
+      default: return 'Unknown Network';
     }
   };
 
@@ -468,9 +515,10 @@ export const Web3Provider = ({ children }: { children: ReactNode }) => {
     isConnected,
     isLoading,
     stakeholder,
-    connectWallet,
-    disconnectWallet,
-    switchNetwork,
+  connectWallet,
+  disconnectWallet,
+  switchNetwork,
+  getNetworkName: () => chainId ? getNetworkName(chainId) : 'Not Connected',
     registerStakeholder,
     registerProduct,
     transferProduct,
