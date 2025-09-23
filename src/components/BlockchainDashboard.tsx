@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { Package, TrendingUp, Users, Activity, ExternalLink, Wallet } from 'lucide-react';
 import BlockchainProductRegistration from './BlockchainProductRegistration';
+import BlockchainProductSearch from './BlockchainProductSearch';
 import MetaMaskAuth from './MetaMaskAuth';
 
 const ROLE_NAMES = ['Farmer', 'Distributor', 'Retailer', 'Consumer'];
@@ -147,9 +148,10 @@ const BlockchainDashboard = () => {
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-4">
+          <TabsList className="grid w-full grid-cols-5">
             <TabsTrigger value="overview">Overview</TabsTrigger>
             <TabsTrigger value="register">Register Product</TabsTrigger>
+            <TabsTrigger value="search">Search Products</TabsTrigger>
             <TabsTrigger value="products">My Products</TabsTrigger>
             <TabsTrigger value="transactions">Transactions</TabsTrigger>
           </TabsList>
@@ -215,6 +217,10 @@ const BlockchainDashboard = () => {
 
           <TabsContent value="register">
             <BlockchainProductRegistration />
+          </TabsContent>
+
+          <TabsContent value="search">
+            <BlockchainProductSearch />
           </TabsContent>
 
           <TabsContent value="products" className="space-y-6">
