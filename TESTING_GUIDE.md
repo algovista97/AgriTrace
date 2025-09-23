@@ -1,13 +1,37 @@
-# DApp Testing Guide: Blockchain-First Product Registration & Search
+# Blockchain-Only DApp Testing Guide
 
 ## Overview
-This guide walks you through testing the blockchain-first functionality of the DApp, ensuring products are stored on-chain and persist after reload.
+This DApp now uses ONLY blockchain as the single source of truth. No more demo/fake systems - all operations require real blockchain transactions.
 
-## Pre-requisites
+## Prerequisites
 - MetaMask installed and connected
-- Test network configured (Sepolia, Mumbai, or Local)
-- Test ETH/MATIC for gas fees
+- Smart contract deployed on your chosen network (localhost/Sepolia/Mumbai)
+- Test tokens for gas fees
 - Stakeholder registration completed
+
+## What Changed - Summary
+
+### ✅ Removed (No longer exists):
+- Old `ProductRegistration` component (database-only)
+- Old `Dashboard` component (mixed database/blockchain) 
+- All demo/mock contract functionality
+- `BlockchainSimulator` component
+- All fallback/demo modes
+
+### ✅ Kept & Enhanced:
+- `BlockchainProductRegistration` (real MetaMask transactions only)
+- `BlockchainProductSearch` (blockchain-first with Supabase indexing)  
+- `BlockchainDashboard` (smart contract data only)
+- Product indexer (listens for blockchain events)
+- Network switching (localhost/Sepolia/Mumbai)
+
+## How It Works Now
+
+1. **Registration**: Always requires MetaMask transaction with gas
+2. **Search**: Queries smart contract first, uses indexed data for fast results
+3. **Dashboard**: Displays only blockchain data via contract calls
+4. **Persistence**: Products persist after reload (stored on blockchain)
+5. **No Demo Mode**: If contract not deployed, app shows error instead of fake data
 
 ## Testing Scenarios
 
@@ -144,35 +168,30 @@ This guide walks you through testing the blockchain-first functionality of the D
 ## Expected Behaviors
 
 ### ✅ Correct Behaviors
-- MetaMask popup for every registration
-- Real gas fees deducted
-- Products persist after reload
-- Search finds registered products  
-- Verification confirms authenticity
-- Transaction hashes work in explorers
+- MetaMask popup for every registration (mandatory)
+- Real gas fees deducted from wallet
+- Products persist permanently after reload
+- Search finds registered products from blockchain
+- Verification confirms authenticity via smart contract
+- Transaction hashes work in block explorers
 
-### ❌ Wrong Behaviors (Report if observed)
-- Registration without MetaMask popup
-- No gas fees charged
-- Products disappear after reload
-- Search only finds cached data
-- Verification always fails
-- Fake transaction hashes
+### ❌ Wrong Behaviors (Should NOT happen anymore)
+- Registration without MetaMask popup (removed)
+- No gas fees charged (removed) 
+- Products disappear after reload (should never happen)
+- Demo/fake data (completely removed)
 
-## Demo Mode Fallback
+## Error Handling
 
-If blockchain connection fails, the app enters demo mode:
-- Registration simulates transactions (no real gas)
-- Search uses mock data
-- Products don't persist
-- This is expected behavior for testing without proper network setup
+If smart contract is not deployed on the selected network, the DApp will show clear error messages and refuse to operate instead of falling back to demo mode.
 
 ## Success Criteria
 
 The DApp passes testing if:
-1. ✅ All registrations require MetaMask approval and gas
-2. ✅ Products persist after browser reload/restart
-3. ✅ Search finds products by both ID and name
-4. ✅ Verification confirms product authenticity
+1. ✅ ALL registrations require MetaMask approval and gas (no exceptions)
+2. ✅ Products persist permanently after browser reload/restart  
+3. ✅ Search finds products by both ID and name from blockchain
+4. ✅ Verification confirms product authenticity via smart contract
 5. ✅ Transaction hashes are valid on block explorer
-6. ✅ No products are lost or corrupted
+6. ✅ No demo/fake data ever appears
+7. ✅ Clear errors shown if contract not deployed

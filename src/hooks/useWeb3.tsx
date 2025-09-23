@@ -110,13 +110,7 @@ export const Web3Provider = ({ children }: { children: ReactNode }) => {
     console.log(`Attempting to connect to contract on ${networkName} at:`, contractAddress);
     
     if (!contractAddress || contractAddress === '0x0000000000000000000000000000000000000000') {
-      console.warn('Contract not configured for this network');
-      toast({
-        title: "Contract Not Configured",
-        description: `Smart contract address not set for ${networkName}. Using demo mode.`,
-        variant: "default",
-      });
-      return createMockContract();
+      throw new Error(`Contract not configured for ${networkName}. Please deploy the contract first.`);
     }
 
     try {
@@ -130,7 +124,7 @@ export const Web3Provider = ({ children }: { children: ReactNode }) => {
         const code = await provider.getCode(contractAddress);
         
         if (code === '0x') {
-          throw new Error('No contract deployed at this address');
+          throw new Error(`No contract deployed at address ${contractAddress}`);
         }
         
         console.log(`✅ Contract connected successfully on ${networkName}:`, contractAddress);
@@ -140,87 +134,21 @@ export const Web3Provider = ({ children }: { children: ReactNode }) => {
         });
         return contractInstance;
       } catch (error) {
-        console.warn(`Contract not deployed at ${contractAddress} on ${networkName}, using demo mode`);
-        toast({
-          title: "Demo Mode Active",
-          description: `Contract not deployed on ${networkName}. Using mock blockchain for demonstration.`,
-        });
-        return createMockContract();
+        throw new Error(`Contract not deployed at ${contractAddress} on ${networkName}`);
       }
     } catch (error) {
       console.error('Error initializing contract:', error);
-      toast({
-        title: "Connection Error",
-        description: `Failed to connect to contract on ${networkName}. Using demo mode.`,
-        variant: "destructive",
-      });
-      return createMockContract();
+      throw error;
     }
   };
 
   const getNetworkName = (chainId: string) => {
     switch (chainId) {
       case '0x539': return 'Localhost';
-      case '0xaa36a7': return 'Sepolia';
+      case '0xaa36a7': return 'Sepolia';  
       case '0x13881': return 'Mumbai';
       default: return 'Unknown Network';
     }
-  };
-
-  // Mock contract for demo purposes
-  const createMockContract = () => {
-    return {
-      getStakeholder: async (address: string) => {
-        // Return mock stakeholder data
-        const mockStakeholder = {
-          isRegistered: false,
-          role: 0,
-          name: '',
-          organization: ''
-        };
-        return mockStakeholder;
-      },
-      registerStakeholder: async (role: number, name: string, organization: string) => {
-        // Simulate transaction
-        return {
-          wait: async () => {
-            await new Promise(resolve => setTimeout(resolve, 2000));
-            return { status: 1 };
-          }
-        };
-      },
-      registerProduct: async (...args: any[]) => {
-        // Simulate transaction and return mock product ID
-        return {
-          wait: async () => {
-            await new Promise(resolve => setTimeout(resolve, 2000));
-            return {
-              logs: [{
-                fragment: { name: 'ProductRegistered' },
-                args: { productId: Math.floor(Math.random() * 10000) }
-              }]
-            };
-          }
-        };
-      },
-      interface: {
-        parseLog: (log: any) => ({
-          name: 'ProductRegistered',
-          args: { productId: Math.floor(Math.random() * 10000) }
-        })
-      },
-      // Add other mock methods as needed
-      transferProduct: async (...args: any[]) => ({
-        wait: async () => {
-          await new Promise(resolve => setTimeout(resolve, 2000));
-          return { status: 1 };
-        }
-      }),
-      getProduct: async (productId: number) => ({}),
-      getProductTransactions: async (productId: number) => ([]),
-      getProductsByFarmer: async (farmerAddress: string) => ([]),
-      isProductAuthentic: async (productId: number, dataHash: string) => true
-    };
   };
 
   const connectWallet = async () => {
@@ -251,18 +179,16 @@ export const Web3Provider = ({ children }: { children: ReactNode }) => {
       setChainId(chainId);
       setIsConnected(true);
 
-      // Initialize contract
+      // Initialize contract  
       const contractInstance = await initializeContract(provider, signer, chainId);
       setContract(contractInstance);
 
-      // Load stakeholder data if contract is available
-      if (contractInstance) {
-        try {
-          const stakeholderData = await contractInstance.getStakeholder(accounts[0]);
-          setStakeholder(stakeholderData);
-        } catch (error) {
-          console.log('Stakeholder not registered yet');
-        }
+      // Load stakeholder data
+      try {
+        const stakeholderData = await contractInstance.getStakeholder(accounts[0]);
+        setStakeholder(stakeholderData);
+      } catch (error) {
+        console.log('Stakeholder not registered yet');
       }
 
       toast({
