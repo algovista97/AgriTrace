@@ -8,7 +8,12 @@
     "build": "vite build",
     "build:dev": "vite build --mode development",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "compile": "npx hardhat compile",
+    "test": "npx hardhat test",
+    "deploy:local": "npx hardhat run scripts/deploy.cjs --network localhost",
+    "deploy:sepolia": "npx hardhat run scripts/deploy.cjs --network sepolia",
+    "deploy:mumbai": "npx hardhat run scripts/deploy.cjs --network mumbai"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",
