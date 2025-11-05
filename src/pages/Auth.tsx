@@ -38,14 +38,35 @@ const Auth = () => {
 
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Validate required fields
+    if (!formData.email || !formData.password || !formData.fullName || !formData.role) {
+      toast({
+        title: "Validation Error",
+        description: "Please fill in all required fields",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Validate password length
+    if (formData.password.length < 6) {
+      toast({
+        title: "Validation Error",
+        description: "Password must be at least 6 characters long",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setLoading(true);
 
     try {
-      const { error: authError } = await supabase.auth.signUp({
+      const { data, error: authError } = await supabase.auth.signUp({
         email: formData.email,
         password: formData.password,
         options: {
-          emailRedirectTo: `${window.location.origin}/`,
+          emailRedirectTo: `${window.location.origin}/dashboard`,
           data: {
             full_name: formData.fullName,
             role: formData.role,
@@ -57,24 +78,32 @@ const Auth = () => {
       });
 
       if (authError) {
+        console.error('Signup error:', authError);
         toast({
           title: "Signup Error",
-          description: authError.message,
+          description: authError.message || "Failed to create account. Please try again.",
           variant: "destructive",
         });
+        setLoading(false);
         return;
       }
 
+      if (data?.user) {
+        toast({
+          title: "Success!",
+          description: "Account created successfully. You can now sign in.",
+        });
+        
+        // Auto sign-in after successful signup
+        setTimeout(() => {
+          navigate('/dashboard');
+        }, 500);
+      }
+    } catch (error: any) {
+      console.error('Unexpected signup error:', error);
       toast({
-        title: "Success!",
-        description: "Account created successfully. Please check your email for verification.",
-      });
-      
-      navigate('/dashboard');
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "An unexpected error occurred",
+        title: "Connection Error",
+        description: error?.message || "Unable to connect to authentication service. Please check your internet connection.",
         variant: "destructive",
       });
     } finally {
@@ -84,33 +113,51 @@ const Auth = () => {
 
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Validate required fields
+    if (!formData.email || !formData.password) {
+      toast({
+        title: "Validation Error",
+        description: "Please enter both email and password",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setLoading(true);
 
     try {
-      const { error } = await supabase.auth.signInWithPassword({
+      const { data, error } = await supabase.auth.signInWithPassword({
         email: formData.email,
         password: formData.password,
       });
 
       if (error) {
+        console.error('Sign in error:', error);
         toast({
           title: "Login Error",
-          description: error.message,
+          description: error.message || "Invalid email or password. Please try again.",
           variant: "destructive",
         });
+        setLoading(false);
         return;
       }
 
+      if (data?.session) {
+        toast({
+          title: "Welcome back!",
+          description: "Successfully signed in.",
+        });
+        
+        setTimeout(() => {
+          navigate('/dashboard');
+        }, 300);
+      }
+    } catch (error: any) {
+      console.error('Unexpected sign in error:', error);
       toast({
-        title: "Welcome back!",
-        description: "Successfully signed in.",
-      });
-      
-      navigate('/dashboard');
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "An unexpected error occurred",
+        title: "Connection Error",
+        description: error?.message || "Unable to connect to authentication service. Please check your internet connection.",
         variant: "destructive",
       });
     } finally {
