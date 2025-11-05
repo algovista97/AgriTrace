@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, useEffect, ReactNode } from
 import { ethers } from 'ethers';
 import { toast } from '@/hooks/use-toast';
 import SupplyChainABI from '@/contracts/SupplyChain.json';
+import deployedContract from '../contracts/deployed-contract.json';
 
 // Network configurations
 const NETWORKS = {
@@ -42,7 +43,7 @@ const NETWORKS = {
 
 // Contract addresses - Update these after deployment
 const CONTRACT_ADDRESSES = {
-  localhost: '0x5FbDB2315678afecb367f032d93F642f64180aa3', // Update after local deployment
+  localhost: deployedContract.address, // Dynamically loaded from deployed-contract.json
   sepolia: '0x5FbDB2315678afecb367f032d93F642f64180aa3',   // Update after sepolia deployment
   mumbai: '0x5FbDB2315678afecb367f032d93F642f64180aa3',    // Update after mumbai deployment
   hardhat: '0x5FbDB2315678afecb367f032d93F642f64180aa3'     // Legacy support
