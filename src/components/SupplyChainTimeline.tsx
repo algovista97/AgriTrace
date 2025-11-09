@@ -29,6 +29,7 @@ interface SupplyChainTimelineProps {
     retailerName?: string;
     retailerOrganization?: string;
     statusLabel: string;
+    statusIndex?: number;
   };
   truncateAddress?: (address: string) => string;
 }
@@ -37,35 +38,46 @@ export const SupplyChainTimeline: React.FC<SupplyChainTimelineProps> = ({
   product,
   truncateAddress = (addr) => (addr ? `${addr.slice(0, 6)}...${addr.slice(-4)}` : ''),
 }) => {
+  // Status-based completion logic
+  // ProductStatus: Harvested (0), AtDistributor (1), AtRetailer (2), Sold (3)
+  const statusIndex = product.statusIndex ?? 0;
+  const isSold = product.statusLabel === 'Sold' || statusIndex >= 3;
+  
+  // Determine completion based on status progression
+  const farmerCompleted = !!product.farmer || isSold;
+  const distributorCompleted = (statusIndex >= 1 || !!product.distributor) || isSold;
+  const retailerCompleted = (statusIndex >= 2 || !!product.retailer) || isSold;
+  const soldCompleted = isSold;
+  
   const steps: SupplyChainStep[] = [
     {
       label: 'Farmer',
-      active: !!product.farmer,
+      active: farmerCompleted,
       name: product.farmerName,
       organization: product.farmerOrganization,
       address: product.farmer,
-      isCompleted: !!product.farmer,
+      isCompleted: farmerCompleted,
     },
     {
       label: 'Distributor',
-      active: !!product.distributor,
+      active: distributorCompleted,
       name: product.distributorName,
       organization: product.distributorOrganization,
       address: product.distributor,
-      isCompleted: !!product.distributor,
+      isCompleted: distributorCompleted,
     },
     {
       label: 'Retailer',
-      active: !!product.retailer,
+      active: retailerCompleted,
       name: product.retailerName,
       organization: product.retailerOrganization,
       address: product.retailer,
-      isCompleted: !!product.retailer,
+      isCompleted: retailerCompleted,
     },
     {
       label: 'Sold',
-      active: product.statusLabel === 'Sold',
-      isCompleted: product.statusLabel === 'Sold',
+      active: soldCompleted,
+      isCompleted: soldCompleted,
     },
   ];
 
