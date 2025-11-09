@@ -134,26 +134,26 @@ export const SupplyChainTimeline: React.FC<SupplyChainTimelineProps> = ({
                   {step.isCompleted && ' ✅'}
                 </p>
                 
-                {step.active && step.label !== 'Sold' ? (
-                  <div className="space-y-1">
-                    {/* Name and Organization */}
-                    {(step.name || step.organization) && (
-                      <div>
-                        {step.name && (
-                          <p className="text-xs font-medium text-foreground">
-                            {step.name}
-                          </p>
-                        )}
-                        {step.organization && (
-                          <p className="text-xs text-muted-foreground">
-                            ({step.organization})
-                          </p>
-                        )}
-                      </div>
-                    )}
-                    
-                    {/* Wallet Address with Tooltip */}
-                    {step.address && (
+                {step.label !== 'Sold' ? (
+                  step.isCompleted && step.address ? (
+                    <div className="space-y-1">
+                      {/* Name and Organization */}
+                      {(step.name || step.organization) && (
+                        <div>
+                          {step.name && (
+                            <p className="text-xs font-medium text-foreground">
+                              {step.name}
+                            </p>
+                          )}
+                          {step.organization && (
+                            <p className="text-xs text-muted-foreground">
+                              ({step.organization})
+                            </p>
+                          )}
+                        </div>
+                      )}
+                      
+                      {/* Wallet Address with Tooltip - Always show when completed */}
                       <Tooltip>
                         <TooltipTrigger asChild>
                           <p className="text-xs text-muted-foreground font-mono cursor-help hover:text-foreground transition-colors">
@@ -164,12 +164,14 @@ export const SupplyChainTimeline: React.FC<SupplyChainTimelineProps> = ({
                           <p className="font-mono">{step.address}</p>
                         </TooltipContent>
                       </Tooltip>
-                    )}
-                  </div>
-                ) : !step.active && step.label !== 'Sold' ? (
-                  <p className="text-xs text-muted-foreground italic">Pending</p>
+                    </div>
+                  ) : !step.isCompleted ? (
+                    <p className="text-xs text-muted-foreground italic">Pending</p>
+                  ) : null
                 ) : step.label === 'Sold' && step.isCompleted ? (
                   <p className="text-xs text-muted-foreground">Completed</p>
+                ) : step.label === 'Sold' ? (
+                  <p className="text-xs text-muted-foreground italic">Pending</p>
                 ) : null}
               </div>
             </div>

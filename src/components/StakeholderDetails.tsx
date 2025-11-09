@@ -209,6 +209,10 @@ export const StakeholderDetails: React.FC<StakeholderDetailsProps> = ({ product 
                 <span className="font-medium">Added On:</span>{' '}
                 {formatDate(product.distributorAddedAt)}
               </p>
+              <p>
+                <span className="font-medium">Status:</span>{' '}
+                <span className="text-green-600 font-medium">Completed</span>
+              </p>
             </div>
           ) : (
             <div className="pl-4 space-y-1 text-sm text-muted-foreground">
@@ -256,6 +260,10 @@ export const StakeholderDetails: React.FC<StakeholderDetailsProps> = ({ product 
               <p>
                 <span className="font-medium">Added On:</span>{' '}
                 {formatDate(product.retailerAddedAt)}
+              </p>
+              <p>
+                <span className="font-medium">Status:</span>{' '}
+                <span className="text-green-600 font-medium">Completed</span>
               </p>
             </div>
           ) : (
