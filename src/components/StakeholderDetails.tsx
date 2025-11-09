@@ -1,5 +1,6 @@
 import React from 'react';
 import { Separator } from '@/components/ui/separator';
+import { useAuth } from '@/hooks/useAuth';
 
 interface StakeholderDetailsProps {
   product: {
@@ -26,6 +27,21 @@ const formatDate = (timestamp?: number): string => {
 };
 
 export const StakeholderDetails: React.FC<StakeholderDetailsProps> = ({ product }) => {
+  const { profile } = useAuth();
+  
+  // Fallback logic: use blockchain data first, then profile data from signup
+  const farmerDisplayName = product.farmerName || profile?.fullName || '—';
+  const farmerDisplayOrg = product.farmerOrganization || profile?.organization || '—';
+  const farmerDisplayLocation = profile?.location || '—';
+  
+  // For distributor and retailer, we can't use current user's profile as fallback
+  // since they might be different users. Only use blockchain data or show "—"
+  const distributorDisplayName = product.distributorName || '—';
+  const distributorDisplayOrg = product.distributorOrganization || '—';
+  
+  const retailerDisplayName = product.retailerName || '—';
+  const retailerDisplayOrg = product.retailerOrganization || '—';
+  
   return (
     <div className="mt-6 pt-6 border-t">
       <h4 className="text-sm font-semibold mb-4">Stakeholder Details</h4>
@@ -36,12 +52,18 @@ export const StakeholderDetails: React.FC<StakeholderDetailsProps> = ({ product 
           <div className="pl-4 space-y-1 text-sm text-muted-foreground">
             <p>
               <span className="font-medium">Name:</span>{' '}
-              {product.farmerName || '—'}
+              {farmerDisplayName}
             </p>
             <p>
               <span className="font-medium">Organization:</span>{' '}
-              {product.farmerOrganization || '—'}
+              {farmerDisplayOrg}
             </p>
+            {farmerDisplayLocation !== '—' && (
+              <p>
+                <span className="font-medium">Location:</span>{' '}
+                {farmerDisplayLocation}
+              </p>
+            )}
             <p>
               <span className="font-medium">Wallet Address:</span>{' '}
               <span className="font-mono">{product.farmer || '—'}</span>
@@ -62,11 +84,11 @@ export const StakeholderDetails: React.FC<StakeholderDetailsProps> = ({ product 
             <div className="pl-4 space-y-1 text-sm text-muted-foreground">
               <p>
                 <span className="font-medium">Name:</span>{' '}
-                {product.distributorName || '—'}
+                {distributorDisplayName}
               </p>
               <p>
                 <span className="font-medium">Organization:</span>{' '}
-                {product.distributorOrganization || '—'}
+                {distributorDisplayOrg}
               </p>
               <p>
                 <span className="font-medium">Wallet Address:</span>{' '}
@@ -104,11 +126,11 @@ export const StakeholderDetails: React.FC<StakeholderDetailsProps> = ({ product 
             <div className="pl-4 space-y-1 text-sm text-muted-foreground">
               <p>
                 <span className="font-medium">Name:</span>{' '}
-                {product.retailerName || '—'}
+                {retailerDisplayName}
               </p>
               <p>
                 <span className="font-medium">Organization:</span>{' '}
-                {product.retailerOrganization || '—'}
+                {retailerDisplayOrg}
               </p>
               <p>
                 <span className="font-medium">Wallet Address:</span>{' '}

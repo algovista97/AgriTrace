@@ -54,7 +54,7 @@ export const useProductIndexer = () => {
             harvest_date: new Date(Number(productDetails.harvestDate) * 1000).toISOString().split('T')[0],
             quality_grade: productDetails.qualityGrade,
             status: 'harvested',
-            qr_code: `AgriChain-${productId}-${Date.now()}`,
+            qr_code: `AgriTrace-${productId}-${Date.now()}`,
             blockchain_hash: productDetails.dataHash
           });
 

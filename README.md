@@ -1,23 +1,14 @@
-# AgriChain
+# AgriTrace
 
-A blockchain-based agricultural supply chain transparency platform that enables end-to-end tracking of products from farm to consumer. Built with React, Hardhat, and Supabase, AgriChain provides immutable product records, real-time verification, and complete supply chain visibility.
+A blockchain-based agricultural traceability platform connecting farmers, distributors, retailers, and consumers with verified product flow and origin tracking.
 
-## 🌾 Overview
+## Overview
 
-AgriChain revolutionizes agricultural supply chain management by leveraging blockchain technology to create an immutable, transparent record of every product's journey. From the moment a farmer harvests their crop to when it reaches the consumer, every step is recorded on the blockchain, ensuring authenticity, traceability, and trust.
+AgriTrace revolutionizes agricultural supply chain management by leveraging blockchain technology to create an immutable, transparent record of every product's journey. From the moment a farmer harvests their crop to when it reaches the consumer, every step is recorded on the blockchain, ensuring authenticity, traceability, and trust.
 
-### Key Features
+The platform enables stakeholders across the supply chain to register products, track their movement, and verify authenticity using cryptographic hashes. Consumers can verify product origin and authenticity by checking blockchain records, building confidence in the food they purchase.
 
-- **Blockchain-Based Product Registration**: Farmers register products directly on-chain with immutable records
-- **End-to-End Supply Chain Tracking**: Visual timeline showing product journey from Farmer → Distributor → Retailer → Consumer
-- **Product Verification**: Consumers can verify product authenticity using product ID and data hash
-- **Role-Based Access Control**: Four stakeholder roles (Farmer, Distributor, Retailer, Consumer) with specific permissions
-- **Real-Time Dashboard**: Role-specific dashboards with product management, transfer tracking, and transaction history
-- **QR Code Integration**: Scan QR codes to quickly access product information
-- **Smart Contract Integration**: Solidity smart contracts deployed on Ethereum/Polygon networks
-- **Supabase Backend**: Fast product search and indexing with blockchain verification
-
-## 🛠️ Tech Stack
+## Tech Stack
 
 ### Frontend
 - **React 18** with TypeScript
@@ -39,126 +30,79 @@ AgriChain revolutionizes agricultural supply chain management by leveraging bloc
 - **Real-time synchronization** between blockchain and database
 - **REST API** for fast product searches
 
-## 📋 Prerequisites
+## Setup & Installation
 
-Before you begin, ensure you have the following installed:
+### Prerequisites
 
-- **Node.js** (v18 or higher) - [Download](https://nodejs.org/)
-- **npm** or **yarn** package manager
-- **MetaMask** browser extension - [Install](https://metamask.io/)
-- **Git** for version control
+- Node.js (v18 or higher)
+- npm or yarn package manager
+- MetaMask browser extension
+- Git for version control
 
-## 🚀 Getting Started
+### Installation Steps
 
-### 1. Clone the Repository
+1. **Clone the repository**
+   ```bash
+   git clone https://github.com/YOUR_USERNAME/AgriTrace.git
+   cd AgriTrace
+   ```
 
-```bash
-git clone <repository-url>
-cd trace-root
-```
+2. **Install dependencies**
+   ```bash
+   npm install
+   ```
 
-### 2. Install Dependencies
+3. **Environment Configuration**
 
-```bash
-npm install
-```
+   Create a `.env` file in the root directory:
+   ```env
+   # Supabase Configuration (optional - works without it)
+   VITE_USE_SUPABASE=false
+   VITE_SUPABASE_URL=your_supabase_url
+   VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
 
-### 3. Environment Setup
+   # Network Configuration (optional)
+   SEPOLIA_RPC_URL=your_sepolia_rpc_url
+   MUMBAI_RPC_URL=your_mumbai_rpc_url
+   PRIVATE_KEY=your_private_key_for_deployment
+   ```
 
-Create a `.env` file in the root directory:
+4. **Start Local Blockchain**
 
-```env
-# Supabase Configuration (optional - works without it)
-VITE_USE_SUPABASE=false
-VITE_SUPABASE_URL=your_supabase_url
-VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
+   In a separate terminal:
+   ```bash
+   npx hardhat node
+   ```
 
-# Network Configuration (optional)
-SEPOLIA_RPC_URL=your_sepolia_rpc_url
-MUMBAI_RPC_URL=your_mumbai_rpc_url
-PRIVATE_KEY=your_private_key_for_deployment
-```
+   This starts a local Ethereum node on `http://127.0.0.1:8545` with 20 test accounts pre-funded with 10,000 ETH each.
 
-### 4. Start Local Blockchain
+5. **Deploy Smart Contract**
 
-In a separate terminal, start the Hardhat local network:
+   In another terminal:
+   ```bash
+   npm run deploy:local
+   ```
 
-```bash
-npx hardhat node
-```
+   This compiles and deploys the contract to the local network, saving the address to `src/contracts/deployed-contract.json`.
 
-This will start a local Ethereum node on `http://127.0.0.1:8545` with 20 test accounts pre-funded with 10,000 ETH each.
+6. **Start Development Server**
+   ```bash
+   npm run dev
+   ```
 
-### 5. Deploy Smart Contract
+   The application will be available at `http://localhost:8080`
 
-In another terminal, deploy the contract to the local network:
+7. **Connect MetaMask**
 
-```bash
-npm run deploy:local
-```
+   - Open MetaMask extension
+   - Add network: Localhost 8545
+     - RPC URL: `http://127.0.0.1:8545`
+     - Chain ID: `1337`
+     - Currency Symbol: `ETH`
+   - Import one of the test accounts from Hardhat (check terminal output for private keys)
+   - Connect your wallet in the application
 
-This will:
-- Compile the smart contract
-- Deploy it to the local Hardhat network
-- Save the contract address to `src/contracts/deployed-contract.json`
-
-### 6. Start Development Server
-
-```bash
-npm run dev
-```
-
-The application will be available at `http://localhost:8080`
-
-### 7. Connect MetaMask
-
-1. Open MetaMask extension
-2. Click the network dropdown and select "Add Network"
-3. Add the local network:
-   - Network Name: `Localhost 8545`
-   - RPC URL: `http://127.0.0.1:8545`
-   - Chain ID: `1337`
-   - Currency Symbol: `ETH`
-4. Import one of the test accounts from Hardhat (check the terminal output for private keys)
-5. Connect your wallet in the application
-
-## 📁 Project Structure
-
-```
-trace-root/
-├── contracts/              # Solidity smart contracts
-│   └── SupplyChain.sol     # Main supply chain contract
-├── scripts/                # Deployment scripts
-│   ├── deploy.cjs         # Main deployment script
-│   └── deploy-local.js    # Local deployment script
-├── src/
-│   ├── components/         # React components
-│   │   ├── BlockchainDashboard.tsx      # Main dashboard
-│   │   ├── BlockchainProductRegistration.tsx
-│   │   ├── BlockchainProductSearch.tsx
-│   │   ├── MetaMaskAuth.tsx
-│   │   ├── SupplyChainTimeline.tsx
-│   │   ├── StakeholderDetails.tsx
-│   │   └── ui/            # Shadcn/ui components
-│   ├── hooks/             # Custom React hooks
-│   │   ├── useWeb3.tsx    # Web3/blockchain integration
-│   │   ├── useAuth.tsx    # Authentication
-│   │   └── useProductIndexer.tsx
-│   ├── pages/             # Page components
-│   │   ├── Auth.tsx       # Login/signup page
-│   │   ├── Dashboard.tsx  # Main dashboard page
-│   │   ├── Index.tsx      # Landing page
-│   │   └── Scanner.tsx    # QR scanner page
-│   ├── contracts/         # Contract ABIs and addresses
-│   ├── constants/         # Constants and configurations
-│   └── integrations/      # Third-party integrations
-│       └── supabase/      # Supabase client and types
-├── hardhat.config.cjs     # Hardhat configuration
-├── vite.config.ts         # Vite configuration
-└── package.json           # Dependencies and scripts
-```
-
-## 🎯 Usage Guide
+## Usage Guide
 
 ### For Farmers
 
@@ -167,7 +111,7 @@ trace-root/
 3. **Register on Blockchain**: Register as a stakeholder on the blockchain
 4. **Register Products**: 
    - Go to "Register Product" tab
-   - Fill in product details (name, variety, quantity, location, etc.)
+   - Fill in product details (name, variety, quantity, location, harvest date, quality grade)
    - Generate a data hash (or use provided hash)
    - Submit transaction via MetaMask
 5. **Transfer Products**: Transfer products to distributors when ready
@@ -196,9 +140,47 @@ trace-root/
    - Enter product ID and data hash
    - Verify authenticity against blockchain records
    - View complete supply chain timeline
-   - See detailed stakeholder information
+   - See detailed stakeholder information (name, organization, location from signup data)
 
-## 🔧 Available Scripts
+## Project Structure
+
+```
+AgriTrace/
+├── contracts/              # Solidity smart contracts
+│   └── SupplyChain.sol     # Main supply chain contract
+├── scripts/                # Deployment scripts
+│   ├── deploy.cjs         # Main deployment script
+│   └── deploy-local.js    # Local deployment script
+├── src/
+│   ├── components/         # React components
+│   │   ├── BlockchainDashboard.tsx      # Main dashboard
+│   │   ├── BlockchainProductRegistration.tsx
+│   │   ├── BlockchainProductSearch.tsx
+│   │   ├── MetaMaskAuth.tsx
+│   │   ├── SupplyChainTimeline.tsx
+│   │   ├── StakeholderDetails.tsx
+│   │   └── ui/            # Shadcn/ui components
+│   ├── hooks/             # Custom React hooks
+│   │   ├── useWeb3.tsx    # Web3/blockchain integration
+│   │   ├── useAuth.tsx    # Authentication
+│   │   └── useProductIndexer.tsx
+│   ├── pages/             # Page components
+│   │   ├── Auth.tsx       # Login/signup page
+│   │   ├── Dashboard.tsx  # Main dashboard page
+│   │   ├── Index.tsx      # Landing page
+│   │   └── Scanner.tsx   # QR scanner page
+│   ├── contracts/         # Contract ABIs and addresses
+│   ├── constants/         # Constants and configurations
+│   └── integrations/      # Third-party integrations
+│       └── supabase/      # Supabase client and types
+├── public/                # Static assets
+│   └── as-symbol.png      # Favicon
+├── hardhat.config.cjs     # Hardhat configuration
+├── vite.config.ts         # Vite configuration
+└── package.json           # Dependencies and scripts
+```
+
+## Available Scripts
 
 ```bash
 # Development
@@ -217,7 +199,7 @@ npm run deploy:mumbai    # Deploy to Mumbai testnet
 npm run lint             # Run ESLint
 ```
 
-## 🌐 Network Configuration
+## Network Configuration
 
 ### Local Development
 - **Chain ID**: 1337
@@ -234,7 +216,7 @@ npm run lint             # Run ESLint
 - **RPC URL**: https://rpc-mumbai.maticvigil.com
 - **Explorer**: https://mumbai.polygonscan.com
 
-## 📚 Smart Contract
+## Smart Contract
 
 The main smart contract (`SupplyChain.sol`) provides:
 
@@ -250,18 +232,16 @@ The main smart contract (`SupplyChain.sol`) provides:
 ```solidity
 registerStakeholder(role, name, organization)  // Register as stakeholder
 registerProduct(name, variety, quantity, ...)  // Register new product
-transferProduct(productId, to, status, ...)   // Transfer product
+transferProduct(productId, to, status, ...)     // Transfer product
 getProduct(productId)                          // Get product details
-isProductAuthentic(productId, dataHash)        // Verify authenticity
+isProductAuthentic(productId, dataHash)         // Verify authenticity
 addDistributorDetails(productId, name, org)     // Add distributor info
-addRetailerDetails(productId, name, org)       // Add retailer info
+addRetailerDetails(productId, name, org)        // Add retailer info
 ```
 
-## 🚢 Deployment
+## Deployment
 
 ### Frontend Deployment
-
-The frontend can be deployed to any static hosting service:
 
 **Vercel:**
 ```bash
@@ -270,13 +250,12 @@ vercel
 ```
 
 **Netlify:**
-```bash
-npm run build
-# Upload dist/ folder to Netlify
-```
+1. Build the project: `npm run build`
+2. Upload the `dist/` folder to Netlify
+3. Or connect your GitHub repository for automatic deployments
 
 **Other Platforms:**
-- Build the project: `npm run build`
+- Build: `npm run build`
 - Deploy the `dist/` folder to your hosting service
 
 ### Smart Contract Deployment
@@ -286,7 +265,7 @@ npm run build
 3. **Deploy**: Run `npm run deploy:sepolia` or `npm run deploy:mumbai`
 4. **Update Contract Address**: Update `src/contracts/deployed-contract.json` with new address
 
-## 🔒 Security Considerations
+## Security Considerations
 
 - **Private Keys**: Never commit private keys to version control
 - **Environment Variables**: Keep sensitive data in `.env` file (already in `.gitignore`)
@@ -294,7 +273,7 @@ npm run build
 - **Access Control**: Verify role-based permissions in smart contract
 - **Input Validation**: All user inputs are validated on both frontend and smart contract
 
-## 🤝 Contributing
+## Contributing
 
 Contributions are welcome! Please follow these steps:
 
@@ -304,21 +283,14 @@ Contributions are welcome! Please follow these steps:
 4. Push to the branch (`git push origin feature/amazing-feature`)
 5. Open a Pull Request
 
-## 📝 License
+## License
 
 This project is licensed under the MIT License.
 
-## 🙏 Acknowledgments
+## Acknowledgments
 
-- Built with [React](https://react.dev/)
-- Smart contracts developed with [Hardhat](https://hardhat.org/)
-- UI components from [Shadcn/ui](https://ui.shadcn.com/)
-- Database powered by [Supabase](https://supabase.com/)
-
-## 📞 Support
-
-For issues, questions, or contributions, please open an issue on the GitHub repository.
+Developed as part of a blockchain-based agricultural transparency project. Built with React, Hardhat, and Supabase to bring transparency to agricultural supply chains.
 
 ---
 
-**AgriChain** - Bringing transparency to agricultural supply chains, one block at a time. 🌾
+**AgriTrace** - Bringing transparency to agricultural supply chains, one block at a time. 🌾

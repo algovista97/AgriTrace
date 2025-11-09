@@ -130,7 +130,7 @@ const Auth = () => {
         <CardHeader className="text-center">
           <div className="flex items-center justify-center mb-4">
             <Leaf className="h-8 w-8 text-forest mr-2" />
-            <span className="text-2xl font-bold">AgriChain</span>
+            <span className="text-2xl font-bold">AgriTrace</span>
           </div>
           <CardTitle>Join the Supply Chain Network</CardTitle>
           <CardDescription>

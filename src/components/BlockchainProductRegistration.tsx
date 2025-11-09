@@ -47,7 +47,7 @@ const BlockchainProductRegistration = () => {
   };
 
   const generateQRCode = (productId: number) => {
-    return `AgriChain-${productId}-${Date.now()}`;
+    return `AgriTrace-${productId}-${Date.now()}`;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {

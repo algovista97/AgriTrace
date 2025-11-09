@@ -153,7 +153,7 @@ const MetaMaskAuth = () => {
             </div>
             <CardTitle>Connect Your Wallet</CardTitle>
             <CardDescription>
-              Connect your MetaMask wallet to access the AgriChain DApp
+              Connect your MetaMask wallet to access the AgriTrace DApp
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">

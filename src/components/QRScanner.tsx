@@ -40,7 +40,7 @@ export const QRScanner = () => {
       let verified = false;
 
       // Extract numeric ID from search term
-      const numericId = parseInt(searchTerm.replace(/^(BC-|AgriChain-)/, '').split('-')[0]);
+      const numericId = parseInt(searchTerm.replace(/^(BC-|AgriTrace-)/, '').split('-')[0]);
       
       if (numericId && !isNaN(numericId)) {
         try {
