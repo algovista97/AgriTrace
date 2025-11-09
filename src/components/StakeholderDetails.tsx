@@ -1,6 +1,7 @@
 import React from 'react';
 import { Separator } from '@/components/ui/separator';
 import { useAuth } from '@/hooks/useAuth';
+import { useWeb3 } from '@/hooks/useWeb3';
 
 interface StakeholderDetailsProps {
   product: {
@@ -30,6 +31,7 @@ const formatDate = (timestamp?: number): string => {
 
 export const StakeholderDetails: React.FC<StakeholderDetailsProps> = ({ product }) => {
   const { profile } = useAuth();
+  const { account } = useWeb3();
   
   // Status-based completion logic
   // ProductStatus: Harvested (0), AtDistributor (1), AtRetailer (2), Sold (3)
@@ -41,19 +43,32 @@ export const StakeholderDetails: React.FC<StakeholderDetailsProps> = ({ product 
   const distributorCompleted = (statusIndex >= 1 || !!product.distributor) || isSold;
   const retailerCompleted = (statusIndex >= 2 || !!product.retailer) || isSold;
   
-  // Fallback logic: use blockchain data first, then profile data from signup
-  const farmerDisplayName = product.farmerName || profile?.fullName || '—';
-  const farmerDisplayOrg = product.farmerOrganization || profile?.organization || '—';
-  const farmerDisplayLocation = profile?.location || '—';
+  // Helper function to check if wallet matches current user
+  const isCurrentUser = (walletAddress: string | undefined): boolean => {
+    if (!walletAddress || !account) return false;
+    return walletAddress.toLowerCase() === account.toLowerCase();
+  };
   
-  // Apply same fallback logic for Distributor and Retailer
-  const distributorDisplayName = product.distributorName || profile?.fullName || '—';
-  const distributorDisplayOrg = product.distributorOrganization || profile?.organization || '—';
-  const distributorDisplayLocation = profile?.location || '—';
+  // Farmer: Use blockchain data first, fallback to profile only if wallet matches current user
+  const farmerWallet = product.farmer || '';
+  const farmerIsCurrentUser = isCurrentUser(farmerWallet);
+  const farmerDisplayName = product.farmerName || (farmerIsCurrentUser ? profile?.fullName : undefined) || '—';
+  const farmerDisplayOrg = product.farmerOrganization || (farmerIsCurrentUser ? profile?.organization : undefined) || '—';
+  const farmerDisplayLocation = (farmerIsCurrentUser ? profile?.location : undefined) || '—';
   
-  const retailerDisplayName = product.retailerName || profile?.fullName || '—';
-  const retailerDisplayOrg = product.retailerOrganization || profile?.organization || '—';
-  const retailerDisplayLocation = profile?.location || '—';
+  // Distributor: Use blockchain data ONLY, no profile fallback unless wallet matches
+  const distributorWallet = product.distributor || '';
+  const distributorIsCurrentUser = isCurrentUser(distributorWallet);
+  const distributorDisplayName = product.distributorName || (distributorIsCurrentUser ? profile?.fullName : undefined) || '—';
+  const distributorDisplayOrg = product.distributorOrganization || (distributorIsCurrentUser ? profile?.organization : undefined) || '—';
+  const distributorDisplayLocation = (distributorIsCurrentUser ? profile?.location : undefined) || '—';
+  
+  // Retailer: Use blockchain data ONLY, no profile fallback unless wallet matches
+  const retailerWallet = product.retailer || '';
+  const retailerIsCurrentUser = isCurrentUser(retailerWallet);
+  const retailerDisplayName = product.retailerName || (retailerIsCurrentUser ? profile?.fullName : undefined) || '—';
+  const retailerDisplayOrg = product.retailerOrganization || (retailerIsCurrentUser ? profile?.organization : undefined) || '—';
+  const retailerDisplayLocation = (retailerIsCurrentUser ? profile?.location : undefined) || '—';
   
   return (
     <div className="mt-6 pt-6 border-t">
@@ -80,7 +95,7 @@ export const StakeholderDetails: React.FC<StakeholderDetailsProps> = ({ product 
               )}
               <p>
                 <span className="font-medium">Wallet Address:</span>{' '}
-                <span className="font-mono">{product.farmer || '—'}</span>
+                <span className="font-mono">{farmerWallet || '—'}</span>
               </p>
               <p>
                 <span className="font-medium">Registered On:</span>{' '}
@@ -132,7 +147,7 @@ export const StakeholderDetails: React.FC<StakeholderDetailsProps> = ({ product 
               )}
               <p>
                 <span className="font-medium">Wallet Address:</span>{' '}
-                <span className="font-mono">{product.distributor || '—'}</span>
+                <span className="font-mono">{distributorWallet || '—'}</span>
               </p>
               {product.distributorAddedAt && (
                 <p>
@@ -186,7 +201,7 @@ export const StakeholderDetails: React.FC<StakeholderDetailsProps> = ({ product 
               )}
               <p>
                 <span className="font-medium">Wallet Address:</span>{' '}
-                <span className="font-mono">{product.retailer || '—'}</span>
+                <span className="font-mono">{retailerWallet || '—'}</span>
               </p>
               {product.retailerAddedAt && (
                 <p>
