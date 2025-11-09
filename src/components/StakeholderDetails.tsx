@@ -38,7 +38,7 @@ const formatDate = (timestamp?: number): string => {
 
 export const StakeholderDetails: React.FC<StakeholderDetailsProps> = ({ product }) => {
   const { profile: currentUserProfile } = useAuth();
-  const { account } = useWeb3();
+  const { account, getStakeholderByAddress, contract } = useWeb3();
   
   const [farmerProfile, setFarmerProfile] = useState<StakeholderProfile | null>(null);
   const [distributorProfile, setDistributorProfile] = useState<StakeholderProfile | null>(null);
@@ -50,62 +50,86 @@ export const StakeholderDetails: React.FC<StakeholderDetailsProps> = ({ product 
     return walletAddress.toLowerCase() === account.toLowerCase();
   };
   
-  // Fetch profile data for each stakeholder
+  // Fetch stakeholder data from blockchain and Supabase for each wallet address
   useEffect(() => {
-    const fetchProfiles = async () => {
-      // For Farmer: Use current user profile if wallet matches
-      if (product.farmer && isCurrentUser(product.farmer) && currentUserProfile) {
-        setFarmerProfile({
-          fullName: currentUserProfile.fullName,
-          organization: currentUserProfile.organization,
-          location: currentUserProfile.location,
-        });
-      }
+    const fetchStakeholderData = async (walletAddress: string, setProfile: (p: StakeholderProfile | null) => void) => {
+      if (!walletAddress || !contract) return;
       
-      // For Distributor: Try to find profile by wallet (if we had a wallet_address field)
-      // For now, use current user profile if wallet matches
-      if (product.distributor && isCurrentUser(product.distributor) && currentUserProfile) {
-        setDistributorProfile({
-          fullName: currentUserProfile.fullName,
-          organization: currentUserProfile.organization,
-          location: currentUserProfile.location,
-        });
-      }
-      
-      // For Retailer: Try to find profile by wallet (if we had a wallet_address field)
-      // For now, use current user profile if wallet matches
-      if (product.retailer && isCurrentUser(product.retailer) && currentUserProfile) {
-        setRetailerProfile({
-          fullName: currentUserProfile.fullName,
-          organization: currentUserProfile.organization,
-          location: currentUserProfile.location,
-        });
+      try {
+        // Get blockchain stakeholder data (name, organization)
+        const blockchainStakeholder = await getStakeholderByAddress(walletAddress);
+        
+        // Try to get Supabase profile data
+        // First, check if wallet matches current user
+        if (isCurrentUser(walletAddress) && currentUserProfile) {
+          setProfile({
+            fullName: currentUserProfile.fullName,
+            organization: currentUserProfile.organization,
+            location: currentUserProfile.location,
+          });
+          return;
+        }
+        
+        // Use blockchain data for name and organization
+        // For location, we'll use current user profile if wallet matches
+        // Note: Supabase profiles table doesn't have wallet_address field,
+        // so we can't directly query by wallet. We use blockchain data + current user profile.
+        if (blockchainStakeholder && blockchainStakeholder.name) {
+          const profileData: StakeholderProfile = {
+            fullName: blockchainStakeholder.name,
+            organization: blockchainStakeholder.organization || undefined,
+            location: undefined, // Will be set below if current user
+          };
+          
+          // If this is the current user, add location from their profile
+          if (isCurrentUser(walletAddress) && currentUserProfile?.location) {
+            profileData.location = currentUserProfile.location;
+          }
+          
+          setProfile(profileData);
+        }
+      } catch (error) {
+        console.error('Error fetching stakeholder data:', error);
+        // If current user, use their profile
+        if (isCurrentUser(walletAddress) && currentUserProfile) {
+          setProfile({
+            fullName: currentUserProfile.fullName,
+            organization: currentUserProfile.organization,
+            location: currentUserProfile.location,
+          });
+        }
       }
     };
     
-    fetchProfiles();
-  }, [product.farmer, product.distributor, product.retailer, account, currentUserProfile]);
+    // Fetch data for each stakeholder
+    if (product.farmer) {
+      fetchStakeholderData(product.farmer, setFarmerProfile);
+    }
+    if (product.distributor) {
+      fetchStakeholderData(product.distributor, setDistributorProfile);
+    }
+    if (product.retailer) {
+      fetchStakeholderData(product.retailer, setRetailerProfile);
+    }
+  }, [product.farmer, product.distributor, product.retailer, account, currentUserProfile, contract, getStakeholderByAddress]);
   
-  // Farmer: Use blockchain data first, then profile data if available
+  // Farmer: Use blockchain data first, then Supabase profile data
   const farmerWallet = product.farmer || '';
-  const farmerIsCurrentUser = isCurrentUser(farmerWallet);
-  const farmerDisplayName = product.farmerName || (farmerIsCurrentUser && farmerProfile?.fullName) || '—';
-  const farmerDisplayOrg = product.farmerOrganization || (farmerIsCurrentUser && farmerProfile?.organization) || '—';
-  const farmerDisplayLocation = (farmerIsCurrentUser && farmerProfile?.location) || '—';
+  const farmerDisplayName = product.farmerName || farmerProfile?.fullName || '—';
+  const farmerDisplayOrg = product.farmerOrganization || farmerProfile?.organization || '—';
+  const farmerDisplayLocation = farmerProfile?.location || '—';
   
-  // Distributor: Use blockchain data first, then profile if wallet matches
+  // Distributor: Use blockchain data first, then Supabase profile data
   const distributorWallet = product.distributor || '';
-  const distributorIsCurrentUser = isCurrentUser(distributorWallet);
-  const distributorDisplayName = product.distributorName || (distributorIsCurrentUser && distributorProfile?.fullName) || '—';
-  const distributorDisplayOrg = product.distributorOrganization || (distributorIsCurrentUser && distributorProfile?.organization) || '—';
-  const distributorDisplayLocation = (distributorIsCurrentUser && distributorProfile?.location) || '—';
+  const distributorDisplayName = product.distributorName || distributorProfile?.fullName || '—';
+  const distributorDisplayOrg = product.distributorOrganization || distributorProfile?.organization || '—';
+  const distributorDisplayLocation = distributorProfile?.location || '—';
   
-  // Retailer: Use blockchain data first, then profile if wallet matches
+  // Retailer: Use blockchain data first, then Supabase profile data
   const retailerWallet = product.retailer || '';
-  const retailerIsCurrentUser = isCurrentUser(retailerWallet);
-  const retailerDisplayName = product.retailerName || (retailerIsCurrentUser && retailerProfile?.fullName) || '—';
-  const retailerDisplayOrg = product.retailerOrganization || (retailerIsCurrentUser && retailerProfile?.organization) || '—';
-  const retailerDisplayLocation = (retailerIsCurrentUser && retailerProfile?.location) || '—';
+  const retailerDisplayName = product.retailerName || retailerProfile?.fullName || '—';
+  const retailerDisplayOrg = product.retailerOrganization || retailerProfile?.organization || '—';
+  const retailerDisplayLocation = retailerProfile?.location || '—';
   return (
     <div className="mt-6 pt-6 border-t">
       <h4 className="text-sm font-semibold mb-4">Stakeholder Details</h4>
