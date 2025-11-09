@@ -49,8 +49,8 @@ interface StoredUser {
   profile: Profile;
 }
 
-const LOCAL_USERS_KEY = 'agritrace__users';
-const LOCAL_SESSION_KEY = 'agritrace__session';
+const LOCAL_USERS_KEY = 'agrichain__users';
+const LOCAL_SESSION_KEY = 'agrichain__session';
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 

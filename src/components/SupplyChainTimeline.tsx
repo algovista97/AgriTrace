@@ -43,10 +43,14 @@ export const SupplyChainTimeline: React.FC<SupplyChainTimelineProps> = ({
   const statusIndex = product.statusIndex ?? 0;
   const isSold = product.statusLabel === 'Sold' || statusIndex >= 3;
   
-  // Determine completion based on status progression
-  const farmerCompleted = !!product.farmer || isSold;
-  const distributorCompleted = (statusIndex >= 1 || !!product.distributor) || isSold;
-  const retailerCompleted = (statusIndex >= 2 || !!product.retailer) || isSold;
+  // Determine completion based on status progression:
+  // - If only Farmer is done (status 0) → Farmer green, others gray
+  // - If Distributor is done (status >= 1) → Farmer and Distributor green, others gray
+  // - If Retailer is done (status >= 2) → Farmer, Distributor, Retailer green, Sold gray
+  // - If Sold (status >= 3) → all 4 green
+  const farmerCompleted = !!product.farmer; // Always completed if farmer exists
+  const distributorCompleted = statusIndex >= 1 || !!product.distributor;
+  const retailerCompleted = statusIndex >= 2 || !!product.retailer;
   const soldCompleted = isSold;
   
   const steps: SupplyChainStep[] = [

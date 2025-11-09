@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Separator } from '@/components/ui/separator';
 import { useAuth } from '@/hooks/useAuth';
 import { useWeb3 } from '@/hooks/useWeb3';
+import { supabase } from '@/integrations/supabase/client';
 
 interface StakeholderDetailsProps {
   product: {
@@ -23,6 +24,12 @@ interface StakeholderDetailsProps {
   };
 }
 
+interface StakeholderProfile {
+  fullName?: string;
+  organization?: string;
+  location?: string;
+}
+
 const formatDate = (timestamp?: number): string => {
   if (!timestamp || timestamp === 0) return '—';
   const date = new Date(timestamp * 1000);
@@ -30,54 +37,83 @@ const formatDate = (timestamp?: number): string => {
 };
 
 export const StakeholderDetails: React.FC<StakeholderDetailsProps> = ({ product }) => {
-  const { profile } = useAuth();
+  const { profile: currentUserProfile } = useAuth();
   const { account } = useWeb3();
   
-  // Status-based completion logic
-  // ProductStatus: Harvested (0), AtDistributor (1), AtRetailer (2), Sold (3)
-  const statusIndex = product.statusIndex ?? 0;
-  const isSold = product.statusLabel === 'Sold' || statusIndex >= 3;
+  const [farmerProfile, setFarmerProfile] = useState<StakeholderProfile | null>(null);
+  const [distributorProfile, setDistributorProfile] = useState<StakeholderProfile | null>(null);
+  const [retailerProfile, setRetailerProfile] = useState<StakeholderProfile | null>(null);
   
-  // Determine if each stage is completed
-  const farmerCompleted = !!product.farmer || isSold;
-  const distributorCompleted = (statusIndex >= 1 || !!product.distributor) || isSold;
-  const retailerCompleted = (statusIndex >= 2 || !!product.retailer) || isSold;
-  
-  // Helper function to check if wallet matches current user
+  // Helper to check if wallet matches current user
   const isCurrentUser = (walletAddress: string | undefined): boolean => {
     if (!walletAddress || !account) return false;
     return walletAddress.toLowerCase() === account.toLowerCase();
   };
   
-  // Farmer: Use blockchain data first, fallback to profile only if wallet matches current user
+  // Fetch profile data for each stakeholder
+  useEffect(() => {
+    const fetchProfiles = async () => {
+      // For Farmer: Use current user profile if wallet matches
+      if (product.farmer && isCurrentUser(product.farmer) && currentUserProfile) {
+        setFarmerProfile({
+          fullName: currentUserProfile.fullName,
+          organization: currentUserProfile.organization,
+          location: currentUserProfile.location,
+        });
+      }
+      
+      // For Distributor: Try to find profile by wallet (if we had a wallet_address field)
+      // For now, use current user profile if wallet matches
+      if (product.distributor && isCurrentUser(product.distributor) && currentUserProfile) {
+        setDistributorProfile({
+          fullName: currentUserProfile.fullName,
+          organization: currentUserProfile.organization,
+          location: currentUserProfile.location,
+        });
+      }
+      
+      // For Retailer: Try to find profile by wallet (if we had a wallet_address field)
+      // For now, use current user profile if wallet matches
+      if (product.retailer && isCurrentUser(product.retailer) && currentUserProfile) {
+        setRetailerProfile({
+          fullName: currentUserProfile.fullName,
+          organization: currentUserProfile.organization,
+          location: currentUserProfile.location,
+        });
+      }
+    };
+    
+    fetchProfiles();
+  }, [product.farmer, product.distributor, product.retailer, account, currentUserProfile]);
+  
+  // Farmer: Use blockchain data first, then profile data if available
   const farmerWallet = product.farmer || '';
   const farmerIsCurrentUser = isCurrentUser(farmerWallet);
-  const farmerDisplayName = product.farmerName || (farmerIsCurrentUser ? profile?.fullName : undefined) || '—';
-  const farmerDisplayOrg = product.farmerOrganization || (farmerIsCurrentUser ? profile?.organization : undefined) || '—';
-  const farmerDisplayLocation = (farmerIsCurrentUser ? profile?.location : undefined) || '—';
+  const farmerDisplayName = product.farmerName || (farmerIsCurrentUser && farmerProfile?.fullName) || '—';
+  const farmerDisplayOrg = product.farmerOrganization || (farmerIsCurrentUser && farmerProfile?.organization) || '—';
+  const farmerDisplayLocation = (farmerIsCurrentUser && farmerProfile?.location) || '—';
   
-  // Distributor: Use blockchain data ONLY, no profile fallback unless wallet matches
+  // Distributor: Use blockchain data first, then profile if wallet matches
   const distributorWallet = product.distributor || '';
   const distributorIsCurrentUser = isCurrentUser(distributorWallet);
-  const distributorDisplayName = product.distributorName || (distributorIsCurrentUser ? profile?.fullName : undefined) || '—';
-  const distributorDisplayOrg = product.distributorOrganization || (distributorIsCurrentUser ? profile?.organization : undefined) || '—';
-  const distributorDisplayLocation = (distributorIsCurrentUser ? profile?.location : undefined) || '—';
+  const distributorDisplayName = product.distributorName || (distributorIsCurrentUser && distributorProfile?.fullName) || '—';
+  const distributorDisplayOrg = product.distributorOrganization || (distributorIsCurrentUser && distributorProfile?.organization) || '—';
+  const distributorDisplayLocation = (distributorIsCurrentUser && distributorProfile?.location) || '—';
   
-  // Retailer: Use blockchain data ONLY, no profile fallback unless wallet matches
+  // Retailer: Use blockchain data first, then profile if wallet matches
   const retailerWallet = product.retailer || '';
   const retailerIsCurrentUser = isCurrentUser(retailerWallet);
-  const retailerDisplayName = product.retailerName || (retailerIsCurrentUser ? profile?.fullName : undefined) || '—';
-  const retailerDisplayOrg = product.retailerOrganization || (retailerIsCurrentUser ? profile?.organization : undefined) || '—';
-  const retailerDisplayLocation = (retailerIsCurrentUser ? profile?.location : undefined) || '—';
-  
+  const retailerDisplayName = product.retailerName || (retailerIsCurrentUser && retailerProfile?.fullName) || '—';
+  const retailerDisplayOrg = product.retailerOrganization || (retailerIsCurrentUser && retailerProfile?.organization) || '—';
+  const retailerDisplayLocation = (retailerIsCurrentUser && retailerProfile?.location) || '—';
   return (
     <div className="mt-6 pt-6 border-t">
       <h4 className="text-sm font-semibold mb-4">Stakeholder Details</h4>
       <div className="space-y-4">
-        {/* Farmer Section - Always displayed */}
+        {/* Farmer Section */}
         <div className="space-y-1">
           <p className="text-sm font-semibold text-foreground">Farmer:</p>
-          {farmerCompleted ? (
+          {product.farmer ? (
             <div className="pl-4 space-y-1 text-sm text-muted-foreground">
               <p>
                 <span className="font-medium">Name:</span>{' '}
@@ -101,10 +137,6 @@ export const StakeholderDetails: React.FC<StakeholderDetailsProps> = ({ product 
                 <span className="font-medium">Registered On:</span>{' '}
                 {formatDate(product.farmerRegisteredAt)}
               </p>
-              <p>
-                <span className="font-medium">Status:</span>{' '}
-                <span className="text-green-600 font-medium">Completed</span>
-              </p>
             </div>
           ) : (
             <div className="pl-4 space-y-1 text-sm text-muted-foreground">
@@ -126,10 +158,10 @@ export const StakeholderDetails: React.FC<StakeholderDetailsProps> = ({ product 
 
         <Separator />
 
-        {/* Distributor Section - Always displayed */}
+        {/* Distributor Section */}
         <div className="space-y-1">
           <p className="text-sm font-semibold text-foreground">Distributor:</p>
-          {distributorCompleted ? (
+          {product.distributor ? (
             <div className="pl-4 space-y-1 text-sm text-muted-foreground">
               <p>
                 <span className="font-medium">Name:</span>{' '}
@@ -149,15 +181,9 @@ export const StakeholderDetails: React.FC<StakeholderDetailsProps> = ({ product 
                 <span className="font-medium">Wallet Address:</span>{' '}
                 <span className="font-mono">{distributorWallet || '—'}</span>
               </p>
-              {product.distributorAddedAt && (
-                <p>
-                  <span className="font-medium">Added On:</span>{' '}
-                  {formatDate(product.distributorAddedAt)}
-                </p>
-              )}
               <p>
-                <span className="font-medium">Status:</span>{' '}
-                <span className="text-green-600 font-medium">Completed</span>
+                <span className="font-medium">Added On:</span>{' '}
+                {formatDate(product.distributorAddedAt)}
               </p>
             </div>
           ) : (
@@ -180,10 +206,10 @@ export const StakeholderDetails: React.FC<StakeholderDetailsProps> = ({ product 
 
         <Separator />
 
-        {/* Retailer Section - Always displayed */}
+        {/* Retailer Section */}
         <div className="space-y-1">
           <p className="text-sm font-semibold text-foreground">Retailer:</p>
-          {retailerCompleted ? (
+          {product.retailer ? (
             <div className="pl-4 space-y-1 text-sm text-muted-foreground">
               <p>
                 <span className="font-medium">Name:</span>{' '}
@@ -203,15 +229,9 @@ export const StakeholderDetails: React.FC<StakeholderDetailsProps> = ({ product 
                 <span className="font-medium">Wallet Address:</span>{' '}
                 <span className="font-mono">{retailerWallet || '—'}</span>
               </p>
-              {product.retailerAddedAt && (
-                <p>
-                  <span className="font-medium">Added On:</span>{' '}
-                  {formatDate(product.retailerAddedAt)}
-                </p>
-              )}
               <p>
-                <span className="font-medium">Status:</span>{' '}
-                <span className="text-green-600 font-medium">Completed</span>
+                <span className="font-medium">Added On:</span>{' '}
+                {formatDate(product.retailerAddedAt)}
               </p>
             </div>
           ) : (

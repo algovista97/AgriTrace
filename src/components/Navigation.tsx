@@ -38,7 +38,9 @@ export const Navigation = () => {
         {/* Logo */}
         <Link to="/" className="mr-8 flex items-center space-x-2">
           <div className="flex items-center space-x-2">
-            <Leaf className="h-8 w-8 text-forest" />
+            <div className="w-8 h-8 rounded-lg bg-forest flex items-center justify-center">
+              <Leaf className="h-5 w-5 text-white" />
+            </div>
             <span className="font-bold text-xl text-foreground">AgriTrace</span>
           </div>
           <Badge variant="secondary" className="ml-2 bg-harvest/10 text-harvest border-harvest/20">
