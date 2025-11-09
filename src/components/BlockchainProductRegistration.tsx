@@ -62,7 +62,7 @@ const BlockchainProductRegistration = () => {
       return;
     }
 
-    if (stakeholder.role !== 0) { // 0 = Farmer
+    if (stakeholder.roleKey !== 'farmer') {
       toast({
         title: "Access Denied",
         description: "Only farmers can register products.",
@@ -207,7 +207,7 @@ const BlockchainProductRegistration = () => {
     );
   }
 
-  if (stakeholder.role !== 0) {
+  if (stakeholder.roleKey !== 'farmer') {
     return (
       <Card>
         <CardHeader>

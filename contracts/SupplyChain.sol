@@ -17,6 +17,22 @@ contract SupplyChain {
         address farmer;
         string dataHash;
         bool exists;
+        // NEW: Farmer details
+        string farmerName;
+        string farmerOrganization;
+        // NEW: Distributor details
+        address distributor;
+        string distributorName;
+        string distributorOrganization;
+        // NEW: Retailer details
+        address retailer;
+        string retailerName;
+        string retailerOrganization;
+        // NEW: Timestamps
+        uint256 farmerRegisteredAt;
+        uint256 distributorAddedAt;
+        uint256 retailerAddedAt;
+        uint256 soldAt;
     }
     
     struct Transaction {
@@ -86,6 +102,8 @@ contract SupplyChain {
         string memory _organization
     ) public {
         require(!stakeholders[msg.sender].isRegistered, "Already registered");
+        require(bytes(_name).length > 0, "Name required");
+        require(uint8(_role) <= 3, "Invalid role");
         
         stakeholders[msg.sender] = Stakeholder({
             walletAddress: msg.sender,
@@ -110,6 +128,9 @@ contract SupplyChain {
         productCounter++;
         uint256 productId = productCounter;
         
+        // Get farmer details from stakeholder mapping
+        Stakeholder memory farmerStakeholder = stakeholders[msg.sender];
+        
         products[productId] = Product({
             id: productId,
             name: _name,
@@ -121,7 +142,23 @@ contract SupplyChain {
             status: ProductStatus.Harvested,
             farmer: msg.sender,
             dataHash: _dataHash,
-            exists: true
+            exists: true,
+            // NEW: Set farmer details from stakeholder mapping
+            farmerName: farmerStakeholder.name,
+            farmerOrganization: farmerStakeholder.organization,
+            // NEW: Initialize distributor fields
+            distributor: address(0),
+            distributorName: "",
+            distributorOrganization: "",
+            // NEW: Initialize retailer fields
+            retailer: address(0),
+            retailerName: "",
+            retailerOrganization: "",
+            // NEW: Set timestamps
+            farmerRegisteredAt: block.timestamp,
+            distributorAddedAt: 0,
+            retailerAddedAt: 0,
+            soldAt: 0
         });
         
         // Record initial transaction
@@ -163,6 +200,11 @@ contract SupplyChain {
         }
         
         product.status = _newStatus;
+        
+        // Set soldAt timestamp when status changes to Sold
+        if (_newStatus == ProductStatus.Sold && product.soldAt == 0) {
+            product.soldAt = block.timestamp;
+        }
         
         productTransactions[_productId].push(Transaction({
             productId: _productId,
@@ -212,5 +254,37 @@ contract SupplyChain {
         }
         
         return result;
+    }
+    
+    // NEW: Add distributor details to a product
+    function addDistributorDetails(
+        uint256 _productId,
+        string memory _name,
+        string memory _org
+    ) public productExists(_productId) {
+        Product storage product = products[_productId];
+        require(product.distributor == address(0), "Distributor already set");
+        require(bytes(_name).length > 0, "Name required");
+        
+        product.distributor = msg.sender;
+        product.distributorName = _name;
+        product.distributorOrganization = _org;
+        product.distributorAddedAt = block.timestamp;
+    }
+    
+    // NEW: Add retailer details to a product
+    function addRetailerDetails(
+        uint256 _productId,
+        string memory _name,
+        string memory _org
+    ) public productExists(_productId) {
+        Product storage product = products[_productId];
+        require(product.retailer == address(0), "Retailer already set");
+        require(bytes(_name).length > 0, "Name required");
+        
+        product.retailer = msg.sender;
+        product.retailerName = _name;
+        product.retailerOrganization = _org;
+        product.retailerAddedAt = block.timestamp;
     }
 }

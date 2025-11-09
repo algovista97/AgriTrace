@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
-import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -10,11 +9,12 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from '@/hooks/use-toast';
 import { Leaf, Truck, Store, User } from 'lucide-react';
+import { RoleKey } from '@/constants/roles';
 
 const Auth = () => {
   const navigate = useNavigate();
-  const { user } = useAuth();
-  const [loading, setLoading] = useState(false);
+  const { user, loading: authInitializing, signIn, signUp } = useAuth();
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState({
     email: '',
     password: '',
@@ -36,10 +36,10 @@ const Auth = () => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
+  // ✅ SIGN UP — uses auth context (local or Supabase)
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    // Validate required fields
+
     if (!formData.email || !formData.password || !formData.fullName || !formData.role) {
       toast({
         title: "Validation Error",
@@ -49,7 +49,6 @@ const Auth = () => {
       return;
     }
 
-    // Validate password length
     if (formData.password.length < 6) {
       toast({
         title: "Validation Error",
@@ -59,62 +58,36 @@ const Auth = () => {
       return;
     }
 
-    setLoading(true);
+    setIsSubmitting(true);
 
     try {
-      const { data, error: authError } = await supabase.auth.signUp({
+      await signUp({
         email: formData.email,
         password: formData.password,
-        options: {
-          emailRedirectTo: `${window.location.origin}/dashboard`,
-          data: {
-            full_name: formData.fullName,
-            role: formData.role,
-            organization: formData.organization,
-            location: formData.location,
-            phone: formData.phone
-          }
-        }
+        fullName: formData.fullName,
+        role: formData.role as RoleKey,
+        organization: formData.organization,
+        location: formData.location,
+        phone: formData.phone,
       });
 
-      if (authError) {
-        console.error('Signup error:', authError);
-        toast({
-          title: "Signup Error",
-          description: authError.message || "Failed to create account. Please try again.",
-          variant: "destructive",
-        });
-        setLoading(false);
-        return;
-      }
-
-      if (data?.user) {
-        toast({
-          title: "Success!",
-          description: "Account created successfully. You can now sign in.",
-        });
-        
-        // Auto sign-in after successful signup
-        setTimeout(() => {
-          navigate('/dashboard');
-        }, 500);
-      }
+      navigate('/dashboard');
     } catch (error: any) {
       console.error('Unexpected signup error:', error);
       toast({
         title: "Connection Error",
-        description: error?.message || "Unable to connect to authentication service. Please check your internet connection.",
+        description: error?.message || "Unable to connect to authentication service.",
         variant: "destructive",
       });
     } finally {
-      setLoading(false);
+      setIsSubmitting(false);
     }
   };
 
+  // 🧩 SIGN IN — context handles backend logic
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    // Validate required fields
+
     if (!formData.email || !formData.password) {
       toast({
         title: "Validation Error",
@@ -124,44 +97,20 @@ const Auth = () => {
       return;
     }
 
-    setLoading(true);
+    setIsSubmitting(true);
 
     try {
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email: formData.email,
-        password: formData.password,
-      });
-
-      if (error) {
-        console.error('Sign in error:', error);
-        toast({
-          title: "Login Error",
-          description: error.message || "Invalid email or password. Please try again.",
-          variant: "destructive",
-        });
-        setLoading(false);
-        return;
-      }
-
-      if (data?.session) {
-        toast({
-          title: "Welcome back!",
-          description: "Successfully signed in.",
-        });
-        
-        setTimeout(() => {
-          navigate('/dashboard');
-        }, 300);
-      }
+      await signIn(formData.email, formData.password);
+      navigate('/dashboard');
     } catch (error: any) {
       console.error('Unexpected sign in error:', error);
       toast({
         title: "Connection Error",
-        description: error?.message || "Unable to connect to authentication service. Please check your internet connection.",
+        description: error?.message || "Unable to connect to authentication service.",
         variant: "destructive",
       });
     } finally {
-      setLoading(false);
+      setIsSubmitting(false);
     }
   };
 
@@ -194,13 +143,13 @@ const Auth = () => {
               <TabsTrigger value="signin">Sign In</TabsTrigger>
               <TabsTrigger value="signup">Sign Up</TabsTrigger>
             </TabsList>
-            
+
+            {/* Sign In */}
             <TabsContent value="signin" className="space-y-4">
               <form onSubmit={handleSignIn} className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="signin-email">Email</Label>
+                  <Label>Email</Label>
                   <Input
-                    id="signin-email"
                     type="email"
                     placeholder="your@email.com"
                     value={formData.email}
@@ -209,9 +158,8 @@ const Auth = () => {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="signin-password">Password</Label>
+                  <Label>Password</Label>
                   <Input
-                    id="signin-password"
                     type="password"
                     placeholder="Enter your password"
                     value={formData.password}
@@ -219,19 +167,19 @@ const Auth = () => {
                     required
                   />
                 </div>
-                <Button type="submit" className="w-full" disabled={loading}>
-                  {loading ? 'Signing In...' : 'Sign In'}
+                <Button type="submit" className="w-full" disabled={isSubmitting || authInitializing}>
+                  {isSubmitting ? 'Signing In...' : 'Sign In'}
                 </Button>
               </form>
             </TabsContent>
-            
+
+            {/* Sign Up */}
             <TabsContent value="signup" className="space-y-4">
               <form onSubmit={handleSignUp} className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="email">Email</Label>
+                    <Label>Email</Label>
                     <Input
-                      id="email"
                       type="email"
                       placeholder="your@email.com"
                       value={formData.email}
@@ -240,9 +188,8 @@ const Auth = () => {
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="password">Password</Label>
+                    <Label>Password</Label>
                     <Input
-                      id="password"
                       type="password"
                       placeholder="Create password"
                       value={formData.password}
@@ -251,11 +198,10 @@ const Auth = () => {
                     />
                   </div>
                 </div>
-                
+
                 <div className="space-y-2">
-                  <Label htmlFor="fullName">Full Name</Label>
+                  <Label>Full Name</Label>
                   <Input
-                    id="fullName"
                     type="text"
                     placeholder="Your full name"
                     value={formData.fullName}
@@ -263,54 +209,26 @@ const Auth = () => {
                     required
                   />
                 </div>
-                
+
                 <div className="space-y-2">
-                  <Label htmlFor="role">Role in Supply Chain</Label>
-                  <Select value={formData.role} onValueChange={(value) => handleInputChange('role', value)} required>
+                  <Label>Role in Supply Chain</Label>
+                  <Select value={formData.role} onValueChange={(v) => handleInputChange('role', v)} required>
                     <SelectTrigger>
-                      <SelectValue placeholder="Select your role">
-                        {formData.role && (
-                          <div className="flex items-center">
-                            {getRoleIcon(formData.role)}
-                            <span className="ml-2 capitalize">{formData.role}</span>
-                          </div>
-                        )}
-                      </SelectValue>
+                      <SelectValue placeholder="Select your role" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="farmer">
-                        <div className="flex items-center">
-                          <Leaf className="w-4 h-4 mr-2" />
-                          Farmer
-                        </div>
-                      </SelectItem>
-                      <SelectItem value="distributor">
-                        <div className="flex items-center">
-                          <Truck className="w-4 h-4 mr-2" />
-                          Distributor
-                        </div>
-                      </SelectItem>
-                      <SelectItem value="retailer">
-                        <div className="flex items-center">
-                          <Store className="w-4 h-4 mr-2" />
-                          Retailer
-                        </div>
-                      </SelectItem>
-                      <SelectItem value="consumer">
-                        <div className="flex items-center">
-                          <User className="w-4 h-4 mr-2" />
-                          Consumer
-                        </div>
-                      </SelectItem>
+                      <SelectItem value="farmer">Farmer</SelectItem>
+                      <SelectItem value="distributor">Distributor</SelectItem>
+                      <SelectItem value="retailer">Retailer</SelectItem>
+                      <SelectItem value="consumer">Consumer</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
-                
+
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="organization">Organization</Label>
+                    <Label>Organization</Label>
                     <Input
-                      id="organization"
                       type="text"
                       placeholder="Company/Farm name"
                       value={formData.organization}
@@ -318,9 +236,8 @@ const Auth = () => {
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="location">Location</Label>
+                    <Label>Location</Label>
                     <Input
-                      id="location"
                       type="text"
                       placeholder="City, Country"
                       value={formData.location}
@@ -328,20 +245,19 @@ const Auth = () => {
                     />
                   </div>
                 </div>
-                
+
                 <div className="space-y-2">
-                  <Label htmlFor="phone">Phone (Optional)</Label>
+                  <Label>Phone (Optional)</Label>
                   <Input
-                    id="phone"
                     type="tel"
                     placeholder="+1 (555) 123-4567"
                     value={formData.phone}
                     onChange={(e) => handleInputChange('phone', e.target.value)}
                   />
                 </div>
-                
-                <Button type="submit" className="w-full" disabled={loading}>
-                  {loading ? 'Creating Account...' : 'Create Account'}
+
+                <Button type="submit" className="w-full" disabled={isSubmitting || authInitializing}>
+                  {isSubmitting ? 'Creating Account...' : 'Create Account'}
                 </Button>
               </form>
             </TabsContent>

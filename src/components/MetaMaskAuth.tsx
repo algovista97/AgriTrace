@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useWeb3 } from '@/hooks/useWeb3';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -8,13 +8,20 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Badge } from '@/components/ui/badge';
 import { Wallet, ExternalLink, AlertCircle } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
+import { useAuth } from '@/hooks/useAuth';
+import { ROLE_KEYS, ROLE_KEY_TO_INDEX, ROLE_LABELS } from '@/constants/roles';
 
-const ROLE_NAMES = ['Farmer', 'Distributor', 'Retailer', 'Consumer'];
 const NETWORK_NAMES = {
   '0x539': 'Localhost 8545',
   '0xaa36a7': 'Sepolia Testnet',
   '0x13881': 'Mumbai Testnet'
 };
+
+const ROLE_OPTIONS = ROLE_KEYS.map((key) => ({
+  key,
+  label: ROLE_LABELS[key],
+  value: ROLE_KEY_TO_INDEX[key].toString(),
+}));
 
 const MetaMaskAuth = () => {
   const {
@@ -28,6 +35,7 @@ const MetaMaskAuth = () => {
     switchNetwork,
     registerStakeholder
   } = useWeb3();
+  const { profile } = useAuth();
 
   const [registrationData, setRegistrationData] = useState({
     role: '',
@@ -35,6 +43,43 @@ const MetaMaskAuth = () => {
     organization: ''
   });
   const [isRegistering, setIsRegistering] = useState(false);
+
+  const hasEthereum = useMemo(() => typeof window !== 'undefined' && Boolean(window.ethereum), []);
+
+  const preferredRoleValue = useMemo(() => {
+    if (!profile?.role) return '';
+    return ROLE_KEY_TO_INDEX[profile.role].toString();
+  }, [profile?.role]);
+
+  useEffect(() => {
+    if (!profile) return;
+
+    setRegistrationData((prev) => {
+      const nextRole = prev.role || preferredRoleValue;
+      const nextName = prev.name || profile.fullName || '';
+      const nextOrg = prev.organization || profile.organization || '';
+
+      if (nextRole === prev.role && nextName === prev.name && nextOrg === prev.organization) {
+        return prev;
+      }
+
+      return {
+        role: nextRole,
+        name: nextName,
+        organization: nextOrg,
+      };
+    });
+  }, [preferredRoleValue, profile]);
+
+  const profileRoleLabel = profile?.role ? ROLE_LABELS[profile.role] : undefined;
+
+  const walletRoleMismatch = Boolean(
+    stakeholder?.isRegistered &&
+      profile?.role &&
+      stakeholder.roleKey !== profile.role
+  );
+
+  const walletRoleLabel = stakeholder?.isRegistered ? ROLE_LABELS[stakeholder.roleKey] : null;
 
   const handleRegisterStakeholder = async () => {
     if (!registrationData.role || !registrationData.name) {
@@ -46,14 +91,38 @@ const MetaMaskAuth = () => {
       return;
     }
 
+    const roleIndex = parseInt(registrationData.role, 10);
+    if (Number.isNaN(roleIndex)) {
+      toast({
+        title: "Invalid Role",
+        description: "Please select a valid role before registering",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const selectedRoleKey = ROLE_OPTIONS.find((option) => option.value === registrationData.role)?.key;
+    if (profile?.role && selectedRoleKey && selectedRoleKey !== profile.role) {
+      toast({
+        title: "Role Mismatch",
+        description: `Your profile role is ${ROLE_LABELS[profile.role]}. Please register the same role on-chain.`,
+        variant: "destructive",
+      });
+      return;
+    }
+
     setIsRegistering(true);
     try {
       await registerStakeholder(
-        parseInt(registrationData.role),
+        roleIndex,
         registrationData.name,
         registrationData.organization || 'N/A'
       );
-      setRegistrationData({ role: '', name: '', organization: '' });
+      setRegistrationData({
+        role: preferredRoleValue,
+        name: profile?.fullName || '',
+        organization: profile?.organization || '',
+      });
     } catch (error) {
       console.error('Registration error:', error);
     } finally {
@@ -88,7 +157,7 @@ const MetaMaskAuth = () => {
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            {!window.ethereum && (
+            {!hasEthereum && (
               <div className="flex items-center gap-2 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
                 <AlertCircle className="w-4 h-4 text-yellow-600" />
                 <span className="text-sm text-yellow-800">
@@ -99,13 +168,13 @@ const MetaMaskAuth = () => {
             
             <Button 
               onClick={connectWallet} 
-              disabled={isLoading || !window.ethereum}
+              disabled={isLoading || !hasEthereum}
               className="w-full"
             >
               {isLoading ? 'Connecting...' : 'Connect MetaMask'}
             </Button>
             
-            {!window.ethereum && (
+            {!hasEthereum && (
               <Button
                 variant="outline"
                 onClick={() => window.open('https://metamask.io', '_blank')}
@@ -149,6 +218,19 @@ const MetaMaskAuth = () => {
               {networkStatus?.name}
             </Badge>
           </div>
+
+          {walletRoleMismatch && (
+            <div className="flex items-start gap-2 p-3 bg-yellow-50 border border-yellow-200 rounded-lg text-sm text-yellow-900">
+              <AlertCircle className="w-4 h-4 mt-0.5" />
+              <div>
+                <p className="font-medium">Role mismatch detected</p>
+                <p>
+                  Your account profile is registered as {profileRoleLabel ?? 'Unknown role'} but this wallet is {walletRoleLabel ?? 'Unregistered'}.
+                  Use a wallet registered with the same role or contact an administrator to update your on-chain role.
+                </p>
+              </div>
+            </div>
+          )}
 
           {!networkStatus?.isSupported && (
             <div className="space-y-2">
@@ -199,9 +281,9 @@ const MetaMaskAuth = () => {
                     <SelectValue placeholder="Select your role" />
                   </SelectTrigger>
                   <SelectContent>
-                    {ROLE_NAMES.map((role, index) => (
-                      <SelectItem key={index} value={index.toString()}>
-                        {role}
+                    {ROLE_OPTIONS.map((option) => (
+                      <SelectItem key={option.value} value={option.value}>
+                        {option.label}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -244,7 +326,7 @@ const MetaMaskAuth = () => {
               <h3 className="font-medium">Registration Status</h3>
               <div className="flex items-center justify-between">
                 <span className="text-sm">Role:</span>
-                <Badge>{ROLE_NAMES[stakeholder.role]}</Badge>
+                <Badge>{walletRoleLabel ?? 'Unregistered'}</Badge>
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-sm">Name:</span>

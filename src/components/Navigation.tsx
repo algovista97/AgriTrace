@@ -4,15 +4,14 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { useAuth } from '@/hooks/useAuth';
+import { ROLE_LABELS } from '@/constants/roles';
 import { 
   Leaf, 
   Menu, 
   QrCode, 
   BarChart3, 
-  Users, 
   Shield,
   Home,
-  Search,
   LogOut,
   User
 } from 'lucide-react';
@@ -30,7 +29,7 @@ export const Navigation = () => {
 
   const handleSignOut = async () => {
     await signOut();
-    navigate('/');
+    navigate('/auth');
   };
 
   return (
@@ -70,10 +69,10 @@ export const Navigation = () => {
               <>
                 <div className="flex items-center space-x-2 text-sm">
                   <User className="h-4 w-4" />
-                  <span>{profile?.full_name || user.email}</span>
+                  <span>{profile?.fullName || user.email}</span>
                   {profile?.role && (
                     <Badge variant="outline" className="capitalize">
-                      {profile.role}
+                      {ROLE_LABELS[profile.role]}
                     </Badge>
                   )}
                 </div>
@@ -121,10 +120,10 @@ export const Navigation = () => {
                     {user ? (
                       <>
                         <div className="p-3 bg-muted/50 rounded-lg">
-                          <p className="font-medium">{profile?.full_name || user.email}</p>
+                          <p className="font-medium">{profile?.fullName || user.email}</p>
                           {profile?.role && (
                             <Badge variant="outline" className="mt-1 capitalize">
-                              {profile.role}
+                              {ROLE_LABELS[profile.role]}
                             </Badge>
                           )}
                         </div>

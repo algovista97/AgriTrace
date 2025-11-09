@@ -3,10 +3,11 @@ import { Navigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { Card, CardContent } from '@/components/ui/card';
 import { Loader2 } from 'lucide-react';
+import { ROLE_LABELS, RoleKey } from '@/constants/roles';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
-  requiredRole?: string;
+  requiredRole?: RoleKey;
 }
 
 const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, requiredRole }) => {
@@ -36,8 +37,7 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, requiredRole 
           <CardContent className="p-6 text-center">
             <h2 className="text-xl font-semibold mb-2">Access Denied</h2>
             <p className="text-muted-foreground">
-              You don't have permission to access this page.
-              Required role: {requiredRole}
+              {`You don't have access to this section. Only ${ROLE_LABELS[requiredRole]} can access it.`}
             </p>
           </CardContent>
         </Card>
