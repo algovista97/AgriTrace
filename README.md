@@ -1,2 +1,0 @@
-# AgriTrace
-Supply Chain Transperency
